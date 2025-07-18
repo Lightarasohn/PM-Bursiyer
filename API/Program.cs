@@ -20,6 +20,17 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "PM Bursiyer API", Version = "v1" });
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhostClient", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Buraya izin vermek istediğin adresi yaz
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+
 
 // Dependency Injection
 builder.Services.AddScoped<IAcademicianRepository, AcademicianRepository>();
@@ -46,6 +57,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowLocalhostClient");
 
 app.UseAuthorization();
 
