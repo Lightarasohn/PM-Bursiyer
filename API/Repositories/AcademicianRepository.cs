@@ -47,7 +47,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetAcademicianByIdAsync executing");
 
-            Academician academician = await _context.Academicians.FirstOrDefaultAsync(a => a.Id == id)
+            Academician academician = await _context.Academicians.FirstOrDefaultAsync(a => a.Id == id && !a.Deleted)
                 ?? throw new Exception($"Academician with id: {id} not found");
             return academician;
         }
@@ -56,8 +56,8 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetAllAcademiciansAsync executing");
 
-            IEnumerable<Academician> academicians = await _context.Academicians.ToListAsync();
-            return academicians;   
+            IEnumerable<Academician> academicians = await _context.Academicians.Where(a => !a.Deleted).ToListAsync();
+            return academicians;
         }
 
         public async Task<Academician> UpdateAcademicianAsync(AcademicianDTO academicianDto, int id)

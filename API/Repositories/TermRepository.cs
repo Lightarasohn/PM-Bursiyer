@@ -49,7 +49,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetAllTermsAsync executing");
 
-            IEnumerable<Term> terms = await _context.Terms.ToListAsync();
+            IEnumerable<Term> terms = await _context.Terms.Where(t => !t.Deleted).ToListAsync();
             return terms;
         }
 
@@ -57,7 +57,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetTermByIdAsync executing");
 
-            Term term = await _context.Terms.FirstOrDefaultAsync(t => t.Id == id)
+            Term term = await _context.Terms.FirstOrDefaultAsync(t => t.Id == id && !t.Deleted)
                 ?? throw new Exception($"Term with id: {id} not found");
             return term;
         }

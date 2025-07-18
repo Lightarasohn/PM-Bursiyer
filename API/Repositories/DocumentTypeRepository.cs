@@ -49,7 +49,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetAllDocumentTypesAsync executing");
 
-            IEnumerable<DocumentType> documentTypes = await _context.DocumentTypes.ToListAsync();
+            IEnumerable<DocumentType> documentTypes = await _context.DocumentTypes.Where(dt => !dt.Deleted).ToListAsync();
             return documentTypes;
         }
 
@@ -57,7 +57,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetDocumentTypeByIdAsync executing");
 
-            DocumentType documentType = await _context.DocumentTypes.FirstOrDefaultAsync(dt => dt.Id == id)
+            DocumentType documentType = await _context.DocumentTypes.FirstOrDefaultAsync(dt => dt.Id == id && !dt.Deleted)
                 ?? throw new Exception($"DocumentType with id: {id} not found");
             return documentType;
         }

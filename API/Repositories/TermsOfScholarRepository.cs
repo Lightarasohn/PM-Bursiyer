@@ -49,6 +49,7 @@ namespace API.Repositories
             IEnumerable<TermsOfScholar> termsOfScholars = await _context.TermsOfScholars
                 .Include(ts => ts.Scholar)
                 .Include(ts => ts.Term)
+                .Where(ts => !ts.Deleted)
                 .ToListAsync();
             return termsOfScholars;
         }
@@ -60,7 +61,7 @@ namespace API.Repositories
             TermsOfScholar termsOfScholar = await _context.TermsOfScholars
                 .Include(ts => ts.Scholar)
                 .Include(ts => ts.Term)
-                .FirstOrDefaultAsync(ts => ts.ScholarId == scholarId && ts.TermId == termId)
+                .FirstOrDefaultAsync(ts => ts.ScholarId == scholarId && ts.TermId == termId && !ts.Deleted)
                 ?? throw new Exception($"TermsOfScholar with ScholarId={scholarId} and TermId={termId} not found");
             return termsOfScholar;
         }
@@ -70,7 +71,7 @@ namespace API.Repositories
             _logger.LogInformation("GetAllTermsOfScholarAsync executing");
 
             IEnumerable<TermsOfScholar> termsOfScholars = await _context.TermsOfScholars
-                .Where(ts => ts.ScholarId == scholarId)
+                .Where(ts => ts.ScholarId == scholarId && !ts.Deleted)
                 .Include(ts => ts.Scholar)
                 .Include(ts => ts.Term)
                 .ToListAsync();
@@ -82,7 +83,7 @@ namespace API.Repositories
             _logger.LogInformation("GetTermsOfScholarsByTermIdAsync executing");
 
             IEnumerable<TermsOfScholar> termsOfScholars = await _context.TermsOfScholars
-                .Where(ts => ts.TermId == termId)
+                .Where(ts => ts.TermId == termId && !ts.Deleted)
                 .Include(ts => ts.Scholar)
                 .Include(ts => ts.Term)
                 .ToListAsync();

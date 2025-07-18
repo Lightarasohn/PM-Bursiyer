@@ -49,7 +49,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetAllScholarsAsync executing");
 
-            IEnumerable<Scholar> scholars = await _context.Scholars.ToListAsync();
+            IEnumerable<Scholar> scholars = await _context.Scholars.Where(s => !s.Deleted).ToListAsync();
             return scholars;
         }
 
@@ -57,7 +57,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetScholarByIdAsync executing");
 
-            Scholar scholar = await _context.Scholars.FirstOrDefaultAsync(s => s.Id == id)
+            Scholar scholar = await _context.Scholars.FirstOrDefaultAsync(s => s.Id == id && !s.Deleted)
                 ?? throw new Exception($"Scholar with id: {id} not found");
             return scholar;
         }

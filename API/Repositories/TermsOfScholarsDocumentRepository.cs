@@ -49,6 +49,7 @@ namespace API.Repositories
                 .Include(tsd => tsd.Scholar)
                 .Include(tsd => tsd.Term)
                 .Include(tsd => tsd.DocumentType)
+                .Where(tsd => !tsd.Deleted)
                 .ToListAsync();
             return termsOfScholarsDocuments;
         }
@@ -62,7 +63,7 @@ namespace API.Repositories
                 .Include(ts => ts.Scholar)
                 .Include(ts => ts.Term)
                 .FirstOrDefaultAsync(ts =>
-                ts.ScholarId == scholarId && ts.TermId == termId && ts.DocumentTypeId == documentTypeId)
+                ts.ScholarId == scholarId && ts.TermId == termId && ts.DocumentTypeId == documentTypeId && !ts.Deleted)
                 ?? throw new Exception($"TermsOfScholar's which has termId of {termId} and scholarId of {scholarId}, has no document like documentTypeId of {documentTypeId}");
             return termsOfScholarsDocument;
         }
@@ -75,7 +76,7 @@ namespace API.Repositories
                 .Include(ts => ts.DocumentType)
                 .Include(ts => ts.Scholar)
                 .Include(ts => ts.Term)
-                .Where(ts => ts.ScholarId == scholarId && ts.TermId == termId)
+                .Where(ts => ts.ScholarId == scholarId && ts.TermId == termId && !ts.Deleted)
                 .ToListAsync();
 
             return termsOfScholarsDocuments;
