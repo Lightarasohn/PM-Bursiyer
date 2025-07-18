@@ -28,6 +28,7 @@ namespace API.Repositories
             _logger.LogInformation("AddTermAsync executing");
 
             Term termToAdd = termDto.ToModel();
+            termToAdd.Deleted = false;
             var result = await _context.Terms.AddAsync(termToAdd);
             Term addedTerm = result.Entity;
             await _context.SaveChangesAsync();
@@ -39,7 +40,7 @@ namespace API.Repositories
             _logger.LogInformation("DeleteTermAsync executing");
 
             Term termToDelete = await GetTermByIdAsync(id);
-            _context.Terms.Remove(termToDelete);
+            termToDelete.Deleted = true;
             await _context.SaveChangesAsync();
             return termToDelete;
         }
@@ -70,7 +71,6 @@ namespace API.Repositories
             termToUpdate.StartDate = termDto.StartDate;
             termToUpdate.EndDate = termDto.EndDate;
             termToUpdate.ResponsibleAcademician = termDto.ResponsibleAcademician;
-            termToUpdate.Deleted = termDto.Deleted;
             await _context.SaveChangesAsync();
             return termToUpdate;
         }

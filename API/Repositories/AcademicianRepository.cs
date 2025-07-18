@@ -26,6 +26,7 @@ namespace API.Repositories
             _logger.LogInformation("AddAcademicianAsync executing");
 
             Academician academicianToAdd = academicianDto.ToModel();
+            academicianToAdd.Deleted = false;
             var result = await _context.Academicians.AddAsync(academicianToAdd);
             Academician addedAcademician = result.Entity;
             await _context.SaveChangesAsync();
@@ -37,7 +38,7 @@ namespace API.Repositories
             _logger.LogInformation("DeleteAcademicianAsync executing");
 
             Academician academicianToDelete = await GetAcademicianByIdAsync(id);
-            _context.Academicians.Remove(academicianToDelete);
+            academicianToDelete.Deleted = true;
             await _context.SaveChangesAsync();
             return academicianToDelete;
         }
@@ -66,7 +67,6 @@ namespace API.Repositories
             Academician academicianToUpdate = await GetAcademicianByIdAsync(id);
             academicianToUpdate.NameSurname = academicianDto.NameSurname;
             academicianToUpdate.Email = academicianDto.Email;
-            academicianToUpdate.Deleted = academicianDto.Deleted;
             await _context.SaveChangesAsync();
             return academicianToUpdate;
         }

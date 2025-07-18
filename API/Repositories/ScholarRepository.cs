@@ -28,6 +28,7 @@ namespace API.Repositories
             _logger.LogInformation("AddScholarAsync executing");
 
             Scholar scholarToAdd = scholarDto.ToModel();
+            scholarToAdd.Deleted = false;
             var result = await _context.Scholars.AddAsync(scholarToAdd);
             Scholar addedScholar = result.Entity;
             await _context.SaveChangesAsync();
@@ -39,7 +40,7 @@ namespace API.Repositories
             _logger.LogInformation("DeleteScholarAsync executing");
 
             Scholar scholarToDelete = await GetScholarByIdAsync(id);
-            _context.Scholars.Remove(scholarToDelete);
+            scholarToDelete.Deleted = true;
             await _context.SaveChangesAsync();
             return scholarToDelete;
         }
@@ -67,7 +68,6 @@ namespace API.Repositories
 
             Scholar scholarToUpdate = await GetScholarByIdAsync(id);
             scholarToUpdate.NameSurname = scholarDto.NameSurname;
-            scholarToUpdate.Deleted = scholarDto.Deleted;
             await _context.SaveChangesAsync();
             return scholarToUpdate;
         }

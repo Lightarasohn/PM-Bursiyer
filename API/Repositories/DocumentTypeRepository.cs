@@ -28,6 +28,7 @@ namespace API.Repositories
             _logger.LogInformation("AddDocumentTypeAsync executing");
 
             DocumentType documentTypeToAdd = documentTypeDto.ToModel();
+            documentTypeToAdd.Deleted = false;
             var result = await _context.DocumentTypes.AddAsync(documentTypeToAdd);
             DocumentType addedDocumentType = result.Entity;
             await _context.SaveChangesAsync();
@@ -39,7 +40,7 @@ namespace API.Repositories
             _logger.LogInformation("DeleteDocumentTypeAsync executing");
 
             DocumentType documentTypeToDelete = await GetDocumentTypeByIdAsync(id);
-            _context.DocumentTypes.Remove(documentTypeToDelete);
+            documentTypeToDelete.Deleted = true;
             await _context.SaveChangesAsync();
             return documentTypeToDelete;
         }
@@ -67,7 +68,6 @@ namespace API.Repositories
 
             DocumentType documentTypeToUpdate = await GetDocumentTypeByIdAsync(id);
             documentTypeToUpdate.Name = documentTypeDto.Name;
-            documentTypeToUpdate.Deleted = documentTypeDto.Deleted;
             await _context.SaveChangesAsync();
             return documentTypeToUpdate;
         }

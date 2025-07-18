@@ -14,8 +14,7 @@ namespace API.Mappers
             return new Academician
             {
                 NameSurname = dto.NameSurname,
-                Email = dto.Email,
-                Deleted = dto.Deleted
+                Email = dto.Email
             };
         }
     }

@@ -27,11 +27,10 @@ namespace API.Repositories
         {
             _logger.LogInformation("AddTermDocumentTypeAsync executing");
 
-            var entity = dto.ToModel();
-
-            await _context.TermDocumentTypes.AddAsync(entity);
+            var termDocumentType = dto.ToModel();
+            await _context.TermDocumentTypes.AddAsync(termDocumentType);
             await _context.SaveChangesAsync();
-            return entity;
+            return termDocumentType;
         }
 
         public async Task<TermDocumentType> DeleteTermDocumentTypeAsync(int termId, int documentTypeId)

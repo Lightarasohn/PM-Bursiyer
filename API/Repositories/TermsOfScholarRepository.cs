@@ -25,6 +25,7 @@ namespace API.Repositories
             _logger.LogInformation("AddTermsOfScholarAsync executing");
 
             TermsOfScholar termsOfScholarToAdd = termsOfScholarDto.ToModel();
+            termsOfScholarToAdd.Deleted = false;
             var result = await _context.TermsOfScholars.AddAsync(termsOfScholarToAdd);
             await _context.SaveChangesAsync();
             return result.Entity;
@@ -36,7 +37,7 @@ namespace API.Repositories
 
             TermsOfScholar termsOfScholarToDelete = await GetTermsOfScholarByIdAsync(scholarId, termId);
 
-            _context.TermsOfScholars.Remove(termsOfScholarToDelete);
+            termsOfScholarToDelete.Deleted = true;
             await _context.SaveChangesAsync();
             return termsOfScholarToDelete;
         }
@@ -96,7 +97,6 @@ namespace API.Repositories
 
             termsOfScholarToUpdate.StartDate = termsOfScholarDto.StartDate;
             termsOfScholarToUpdate.EndDate = termsOfScholarDto.EndDate;
-            termsOfScholarToUpdate.Deleted = termsOfScholarDto.Deleted;
 
             await _context.SaveChangesAsync();
             return termsOfScholarToUpdate;

@@ -25,6 +25,7 @@ namespace API.Repositories
             _logger.LogInformation("AddTermsOfScholarsDocumentAsync executing");
 
             TermsOfScholarsDocument termsOfScholarsDocumentToAdd = termsOfScholarsDocumentsDto.ToModel();
+            termsOfScholarsDocumentToAdd.Deleted = false;
             var result = await _context.TermsOfScholarsDocuments.AddAsync(termsOfScholarsDocumentToAdd);
             await _context.SaveChangesAsync();
             return result.Entity;
@@ -35,8 +36,7 @@ namespace API.Repositories
             _logger.LogInformation("DeleteTermsOfScholarsDocumentAsync executing");
 
             TermsOfScholarsDocument termsOfScholarsDocumentToDelete = await GetTermsOfScholarsDocumentByIdAsync(scholarId, termId, documentTypeId);
-
-            _context.TermsOfScholarsDocuments.Remove(termsOfScholarsDocumentToDelete);
+            termsOfScholarsDocumentToDelete.Deleted = true;
             await _context.SaveChangesAsync();
             return termsOfScholarsDocumentToDelete;
         }
@@ -86,7 +86,6 @@ namespace API.Repositories
             _logger.LogInformation("UpdateTermsOfScholarsDocumentAsync executing");
 
             TermsOfScholarsDocument termsOfScholarsDocumentToUpdate = await GetTermsOfScholarsDocumentByIdAsync(scholarId, termId, documentTypeId);
-            termsOfScholarsDocumentToUpdate.Deleted = termsOfScholarsDocumentsDto.Deleted;
             termsOfScholarsDocumentToUpdate.DocumentTypeId = termsOfScholarsDocumentsDto.DocumentTypeId;
             termsOfScholarsDocumentToUpdate.ListType = termsOfScholarsDocumentsDto.ListType;
             termsOfScholarsDocumentToUpdate.RealUploadDate = termsOfScholarsDocumentsDto.RealUploadDate;
