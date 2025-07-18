@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace API.DTOs.TermsOfScholarsDocumentDTOs
 {
-    public class TermsOfScholarsDocumentsDTO
+    public class TermsOfScholarsDocumentDTO
     {
         public int ScholarId { get; set; }
 
@@ -16,5 +16,7 @@ namespace API.DTOs.TermsOfScholarsDocumentDTOs
         public DateOnly? RealUploadDate { get; set; }
 
         public bool Deleted { get; set; }
+
+        public string? ListType { get; set; }
     }
 }

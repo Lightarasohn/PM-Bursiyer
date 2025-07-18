@@ -172,6 +172,9 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.Deleted)
                 .HasDefaultValue(false)
                 .HasColumnName("DELETED");
+            entity.Property(e => e.ListType)
+                .HasColumnType("character varying")
+                .HasColumnName("LIST_TYPE");
             entity.Property(e => e.RealUploadDate).HasColumnName("REAL_UPLOAD_DATE");
 
             entity.HasOne(d => d.DocumentType).WithMany(p => p.TermsOfScholarsDocuments)
