@@ -13,8 +13,7 @@ namespace API.Mappers
         {
             return new DocumentType
             {
-                Name = dto.Name,
-                Deleted = dto.Deleted
+                Name = dto.Name
             };
         }
     }

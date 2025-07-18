@@ -16,8 +16,7 @@ namespace API.Mappers
                 Name = dto.Name,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
-                ResponsibleAcademician = dto.ResponsibleAcademician,
-                Deleted = dto.Deleted
+                ResponsibleAcademician = dto.ResponsibleAcademician
             };
         }
     }

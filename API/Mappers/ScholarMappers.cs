@@ -15,8 +15,7 @@ namespace API.Mappers
             return new Scholar
             {
                 NameSurname = dto.NameSurname,
-                Email = dto.Email,
-                Deleted = dto.Deleted
+                Email = dto.Email
             };
         }
     }

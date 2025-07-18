@@ -16,8 +16,7 @@ namespace API.Mappers
                 ScholarId = dto.ScholarId,
                 TermId = dto.TermId,
                 StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                Deleted = dto.Deleted
+                EndDate = dto.EndDate
             };
         }
     }

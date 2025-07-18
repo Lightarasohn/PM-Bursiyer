@@ -27,13 +27,38 @@ namespace API.Repositories
         {
             _logger.LogInformation("AddTermAsync executing");
 
+            if (string.IsNullOrWhiteSpace(termDto.Name))
+                throw new ArgumentException("Term name cannot be empty.");
+
+            if (termDto.EndDate < termDto.StartDate)
+                throw new ArgumentException("End date cannot be before start date.");
+
+            bool alreadyExists = await _context.Terms
+                .AnyAsync(t =>
+                    t.Name.ToLower() == termDto.Name.ToLower() &&
+                    t.StartDate == termDto.StartDate &&
+                    t.EndDate == termDto.EndDate &&
+                    !t.Deleted);
+            if (alreadyExists)
+                throw new InvalidOperationException("A term with the same name and dates already exists.");
+
+            if (termDto.ResponsibleAcademician != null)
+            {
+                bool academicianExists = await _context.Academicians
+                    .AnyAsync(a => a.Id == termDto.ResponsibleAcademician && !a.Deleted);
+                if (!academicianExists)
+                    throw new InvalidOperationException("Responsible academician does not exist.");
+            }
+
             Term termToAdd = termDto.ToModel();
             termToAdd.Deleted = false;
+
             var result = await _context.Terms.AddAsync(termToAdd);
-            Term addedTerm = result.Entity;
             await _context.SaveChangesAsync();
-            return addedTerm;
+
+            return result.Entity;
         }
+
 
         public async Task<Term> DeleteTermAsync(int id)
         {

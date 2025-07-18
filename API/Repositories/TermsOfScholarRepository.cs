@@ -24,12 +24,34 @@ namespace API.Repositories
         {
             _logger.LogInformation("AddTermsOfScholarAsync executing");
 
+            var scholarExists = await _context.Scholars.AnyAsync(s => s.Id == termsOfScholarDto.ScholarId && !s.Deleted);
+            if(!scholarExists) throw new Exception($"Scholar with id={termsOfScholarDto.ScholarId} not found");
+
+            var termExists = await _context.Terms.AnyAsync(t => t.Id == termsOfScholarDto.TermId && !t.Deleted);
+            if(!termExists) throw new Exception($"Term with id={termsOfScholarDto.TermId} not found");
+
+            var existing = await _context.TermsOfScholars
+                .FirstOrDefaultAsync(ts => ts.ScholarId == termsOfScholarDto.ScholarId && ts.TermId == termsOfScholarDto.TermId && !ts.Deleted);
+
+            if (existing != null)
+            {
+                throw new Exception($"TermsOfScholar entry already exists for ScholarId={termsOfScholarDto.ScholarId} and TermId={termsOfScholarDto.TermId}");
+            }
+
+            if (termsOfScholarDto.StartDate.HasValue && termsOfScholarDto.EndDate.HasValue &&
+                termsOfScholarDto.StartDate > termsOfScholarDto.EndDate)
+            {
+                throw new Exception("StartDate cannot be after EndDate.");
+            }
+
             TermsOfScholar termsOfScholarToAdd = termsOfScholarDto.ToModel();
             termsOfScholarToAdd.Deleted = false;
+
             var result = await _context.TermsOfScholars.AddAsync(termsOfScholarToAdd);
             await _context.SaveChangesAsync();
             return result.Entity;
         }
+
 
         public async Task<TermsOfScholar> DeleteTermsOfScholarAsync(int scholarId, int termId)
         {

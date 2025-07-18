@@ -14,7 +14,5 @@ namespace API.DTOs.TermDTOs
         public DateOnly EndDate { get; set; }
 
         public int? ResponsibleAcademician { get; set; }
-
-        public bool Deleted { get; set; }
     }
 }

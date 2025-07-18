@@ -27,11 +27,32 @@ namespace API.Repositories
         {
             _logger.LogInformation("AddTermDocumentTypeAsync executing");
 
+            if (dto.TermId <= 0 || dto.DocumentTypeId <= 0)
+                throw new ArgumentException("TermId ve DocumentTypeId geçerli olmalıdır.");
+
+            var termExists = await _context.Terms.AnyAsync(t => t.Id == dto.TermId && !t.Deleted);
+            if (!termExists)
+                throw new Exception($"Term ID {dto.TermId} bulunamadı.");
+
+            var docTypeExists = await _context.DocumentTypes.AnyAsync(dt => dt.Id == dto.DocumentTypeId && !dt.Deleted);
+            if (!docTypeExists)
+                throw new Exception($"DocumentType ID {dto.DocumentTypeId} bulunamadı.");
+
+            var alreadyExists = await _context.TermDocumentTypes
+                .AnyAsync(tdt => tdt.TermId == dto.TermId && tdt.DocumentTypeId == dto.DocumentTypeId);
+            if (alreadyExists)
+                throw new Exception("Bu Term ve DocumentType ilişkisi zaten mevcut.");
+
+            if (dto.ExpectedUploadDate.HasValue && dto.ExpectedUploadDate.Value < DateOnly.FromDateTime(DateTime.Today))
+                throw new Exception("Beklenen yükleme tarihi geçmiş bir tarih olamaz.");
+
             var termDocumentType = dto.ToModel();
             await _context.TermDocumentTypes.AddAsync(termDocumentType);
             await _context.SaveChangesAsync();
+
             return termDocumentType;
         }
+
 
         public async Task<TermDocumentType> DeleteTermDocumentTypeAsync(int termId, int documentTypeId)
         {

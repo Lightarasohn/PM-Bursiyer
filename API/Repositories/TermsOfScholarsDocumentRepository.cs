@@ -20,16 +20,43 @@ namespace API.Repositories
             _context = context;
             _logger = logger;
         }
-        public async Task<TermsOfScholarsDocument> AddTermsOfScholarsDocumentAsync(TermsOfScholarsDocumentDTO termsOfScholarsDocumentsDto)
+        public async Task<TermsOfScholarsDocument> AddTermsOfScholarsDocumentAsync(TermsOfScholarsDocumentDTO dto)
         {
             _logger.LogInformation("AddTermsOfScholarsDocumentAsync executing");
 
-            TermsOfScholarsDocument termsOfScholarsDocumentToAdd = termsOfScholarsDocumentsDto.ToModel();
-            termsOfScholarsDocumentToAdd.Deleted = false;
-            var result = await _context.TermsOfScholarsDocuments.AddAsync(termsOfScholarsDocumentToAdd);
+            var scholar = await _context.Scholars.FirstOrDefaultAsync(s => s.Id == dto.ScholarId && !s.Deleted)
+                ?? throw new Exception($"Scholar with ID={dto.ScholarId} not found");
+
+            var term = await _context.Terms.FirstOrDefaultAsync(t => t.Id == dto.TermId && !t.Deleted)
+                ?? throw new Exception($"Term with ID={dto.TermId} not found");
+
+            var documentType = await _context.DocumentTypes.FirstOrDefaultAsync(dt => dt.Id == dto.DocumentTypeId && !dt.Deleted)
+                ?? throw new Exception($"DocumentType with ID={dto.DocumentTypeId} not found");
+
+            var termsOfScholar = await _context.TermsOfScholars
+                .FirstOrDefaultAsync(ts => ts.ScholarId == dto.ScholarId && ts.TermId == dto.TermId && !ts.Deleted)
+                ?? throw new Exception($"No TermsOfScholar found for ScholarId={dto.ScholarId} and TermId={dto.TermId}");
+
+            var existing = await _context.TermsOfScholarsDocuments.FirstOrDefaultAsync(tsd =>
+                tsd.ScholarId == dto.ScholarId &&
+                tsd.TermId == dto.TermId &&
+                tsd.DocumentTypeId == dto.DocumentTypeId &&
+                !tsd.Deleted);
+
+            if (existing != null)
+            {
+                throw new Exception($"Document already exists for ScholarId={dto.ScholarId}, TermId={dto.TermId}, DocumentTypeId={dto.DocumentTypeId}");
+            }
+
+            var entity = dto.ToModel();
+            entity.Deleted = false;
+
+            await _context.TermsOfScholarsDocuments.AddAsync(entity);
             await _context.SaveChangesAsync();
-            return result.Entity;
+
+            return entity;
         }
+
 
         public async Task<TermsOfScholarsDocument> DeleteTermsOfScholarsDocumentAsync(int scholarId, int termId, int documentTypeId)
         {
