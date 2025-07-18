@@ -1,0 +1,4 @@
+appsettings*.json
+*.http
+/Properties
+/obj
