@@ -1,5 +1,5 @@
-const BursiyerListesiAPI = async () => {
-    const url = "http://localhost:5155/api/scholar";
+const GetAllAcademicianAPI = async () => {
+    const url = "http://localhost:5155/api/academician";
     var requestOptions = {
      
         method: "GET"
@@ -11,4 +11,4 @@ const BursiyerListesiAPI = async () => {
     .catch((e) => {console.log(e); return undefined});
 }
 
-export default BursiyerListesiAPI
+export default GetAllAcademicianAPI;
