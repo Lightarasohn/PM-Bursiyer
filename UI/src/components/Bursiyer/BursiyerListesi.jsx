@@ -63,6 +63,7 @@ const BursiyerListesi = () => {
         showExportButton={true}
         exportFileName="bursiyer-listesi"
         pagination={{ pageSize: 10 }}
+        size="large"
 
         showEdit={true}
         showDelete={true}

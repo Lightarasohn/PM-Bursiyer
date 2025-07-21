@@ -76,7 +76,7 @@ const BursiyerEkle = () => {
         variant="outlined"
         clearOnDestroy={false}
         onFinish={handleFinish}
-        onFinishFailed={() => error()}
+        onFinishFailed={() => setIsOpenModel(true)}
       >
         <Row>
           <Card>
@@ -164,7 +164,7 @@ const BursiyerEkle = () => {
                   ]}
                 >
                   <Select
-                    mode="single"
+                    mode="tags"
                     style={{ width: "100%" }}
                     placeholder="Select Academician"
                     onChange={handleChange}

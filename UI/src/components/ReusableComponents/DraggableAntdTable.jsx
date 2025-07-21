@@ -448,7 +448,7 @@ const DraggableAntdTable = ({
             Search
           </Button>
           <Button
-            onClick={() => handleReset(clearFilters)}
+            onClick={() => {handleReset(clearFilters); handleSearch(selectedKeys, confirm, dataIndex)}}
             size="small"
             style={{ width: 90 }}
           >
