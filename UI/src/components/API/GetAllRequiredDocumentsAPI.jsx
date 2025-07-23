@@ -1,14 +1,11 @@
-const AddScholarAPI = async (body) => {
-    const url = `http://localhost:5155/api/scholar`;
+const GetAllRequiredDocumentsAPI = async () => {
+    const query = "?q=required";
+    const url = `http://localhost:5155/api/system-constant${query}`;
     var requestOptions = {
-        method: "POST",
-        headers: {
-            "accept": "*/*",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
+     
+        method: "GET"
     }
-    
+
     try {
         const response = await fetch(url, requestOptions);
         
@@ -25,4 +22,4 @@ const AddScholarAPI = async (body) => {
     }
 }
 
-export default AddScholarAPI;
+export default GetAllRequiredDocumentsAPI;

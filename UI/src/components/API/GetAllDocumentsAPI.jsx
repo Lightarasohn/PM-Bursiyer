@@ -1,14 +1,10 @@
-const AddScholarAPI = async (body) => {
-    const url = `http://localhost:5155/api/scholar`;
+const GetAllDocumentsAPI = async () => {
+    const url = "http://localhost:5155/api/document";
     var requestOptions = {
-        method: "POST",
-        headers: {
-            "accept": "*/*",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
+     
+        method: "GET"
     }
-    
+
     try {
         const response = await fetch(url, requestOptions);
         
@@ -25,4 +21,4 @@ const AddScholarAPI = async (body) => {
     }
 }
 
-export default AddScholarAPI;
+export default GetAllDocumentsAPI;

@@ -1,18 +1,29 @@
-const BursiyerSilmeAPI = async (body) => {
+const addTermAPI = async (body) => {
 
     const url = `http://localhost:5155/api/term`;
     var requestOptions = {
         method: "POST",
         headers: {
-            "accept": "*/*"
+            "accept": "*/*",
+            "Content-Type": "application/json" 
         },
-        body: body
+        body: JSON.stringify(body)
     }
 
-    return await fetch(url, requestOptions)
-    .then((result) => result.json())
-    .then((data) => {return data})
-    .catch((e) => {console.log(e); return undefined});
+    try {
+        const response = await fetch(url, requestOptions);
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        } else {
+            console.log("API returned error status:", response.status);
+            return null;
+        }
+    } catch (error) {
+        console.error("Fetch error:", error);
+        return null;
+    }
 }
 
-export default BursiyerSilmeAPI;
+export default addTermAPI;

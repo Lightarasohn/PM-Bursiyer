@@ -1,4 +1,5 @@
 import {
+  Alert,
   AutoComplete,
   Button,
   Card,
@@ -10,63 +11,196 @@ import {
   Row,
   Select,
   Typography,
-  message
+  message,
 } from "antd";
 import "./BursiyerEkle.css";
 import { useEffect, useState } from "react";
 import GetAllAcademicianAPI from "../API/GetAllAcademicianAPI";
+import AddScholarAPI from "../API/AddScholarAPI";
+import addTermAPI from "../API/AddTermAPI";
+import addTermOfScholarAPI from "../API/addTermOfScholarAPI";
+import GetAllRequiredDocumentsAPI from "../API/GetAllRequiredDocumentsAPI";
+import GetAllDocumentsAPI from "../API/GetAllDocumentsAPI";
 
 const BursiyerEkle = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [academicianOptions, setAcademicianOptions] = useState([]);
   const [isOpenModal, setIsOpenModel] = useState(false);
-  
+  const [requiredDocumentsOnExit, setRequiredDocumentsOnExit] = useState([]);
+  const [requiredDocumentsOnEntry, setRequiredDocumentsOnEntry] = useState([]);
+  const [requiredDocumentsOnAttendance, setRequiredDocumentsOnAttendance] =
+    useState([]);
+  const [allRequiredDocuments, setAllRequiredDocuments] = useState([]);
+
+  const getAllRequiredDocuments = async () => {
+    const allDocuments = await GetAllDocumentsAPI();
+    const requiredDocumentsConstants = await GetAllRequiredDocumentsAPI();
+
+    const allRequiredIds = new Set();
+
+    requiredDocumentsConstants.forEach((item) => {
+      const valueInt = item.valueText.split(",").map((id) => parseInt(id));
+      const requiredDocumentsObjects = allDocuments
+        .filter((x) => valueInt.find((y) => y === x.id))
+        .map((item) => {
+          return { label: item.name, value: item.id };
+        });
+
+      // Tüm ID'leri topla
+      valueInt.forEach((id) => allRequiredIds.add(id));
+
+      switch (item.constantName) {
+        case "requiredDocumentTypesOnEntry":
+          setRequiredDocumentsOnEntry(requiredDocumentsObjects);
+          break;
+        case "requiredDocumentTypesOnAttendance":
+          setRequiredDocumentsOnAttendance(requiredDocumentsObjects);
+          break;
+        case "requiredDocumentTypesOnExit":
+          setRequiredDocumentsOnExit(requiredDocumentsObjects);
+          break;
+        default:
+          break;
+      }
+    });
+
+    // Unique dokümanlari filtrele
+    const uniqueAllRequiredDocuments = allDocuments.filter((doc) =>
+      allRequiredIds.has(doc.id)
+    );
+
+    setAllRequiredDocuments(
+      uniqueAllRequiredDocuments.map((item) => {
+        return { label: item.name, value: item.id };
+      })
+    );
+  };
+
+  useEffect(() => {
+    getAllRequiredDocuments();
+  }, []);
+
+  const [form] = Form.useForm();
+
+useEffect(() => {
+  if (requiredDocumentsOnEntry.length > 0) {
+    form.setFieldsValue({
+      entryDocuments: requiredDocumentsOnEntry.map(doc => doc.value),
+      exitDocuments: requiredDocumentsOnExit.map(doc => doc.value),
+      ongoingDocuments: requiredDocumentsOnAttendance.map(doc => doc.value),
+    });
+  }
+}, [requiredDocumentsOnEntry, requiredDocumentsOnExit, requiredDocumentsOnAttendance, form]);
+
+
+  useEffect(() => {
+    console.log(requiredDocumentsOnAttendance);
+  }, [requiredDocumentsOnAttendance]);
+
   const error = () => {
     messageApi.open({
-      type: 'error',
-      content: 'Error in form',
+      type: "error",
+      content: "Error in form",
     });
   };
 
   const handleChange = (val) => {
-    console.log(val)
-  }
+    console.log(val);
+  };
 
-  useEffect(() => {
-    const fetchAcademician = async () => {
+  const fetchAcademician = async () => {
     const response = await GetAllAcademicianAPI();
-    const academicianNames = response.map(x => ({
+    const academicianNames = response.map((x) => ({
       label: x.nameSurname,
       value: x.id,
     }));
-    setAcademicianOptions(academicianNames)
-  }
+    setAcademicianOptions(academicianNames);
+  };
 
+  useEffect(() => {
     fetchAcademician();
-  },[])
+  }, []);
 
-  const handleFinish = (values) =>  {
-    console.log(values);
-    const scholarValues = {
-      nameSurname: values.nameSurname,
-      email: values.email
+  const handleFinish = async (values) => {
+    try {
+      console.log(values);
+
+      // Scholar ekleme
+      const scholarValues = {
+        nameSurname: values.nameSurname,
+        email: values.email,
+      };
+
+      const scholarResponse = await AddScholarAPI(scholarValues);
+      console.log("scholarResponse:", scholarResponse);
+
+      if (!scholarResponse) {
+        messageApi.open({
+          type: "error",
+          content: "Scholar could not be added. Please try again.",
+        });
+        return;
+      }
+
+      // Term ekleme
+      const termValues = {
+        name: values.name,
+        startDate: values.startDate.format("YYYY-MM-DD"),
+        endDate: values.endDate.format("YYYY-MM-DD"),
+        responsibleAcademician: values.responsibleAcademician,
+      };
+
+      const termResponse = await addTermAPI(termValues);
+      console.log("termResponse:", termResponse);
+
+      if (!termResponse) {
+        messageApi.open({
+          type: "error",
+          content: "Term could not be added. Please try again.",
+        });
+        return;
+      }
+
+      // TermOfScholar ekleme
+      const termOfScholarValues = {
+        scholarId: scholarResponse.id,
+        termId: termResponse.id,
+        startDate: new Date().toISOString().split("T")[0],
+        endDate: null,
+      };
+
+      const termOfScholarResponse = await addTermOfScholarAPI(
+        termOfScholarValues
+      );
+      console.log("termOfScholarResponse:", termOfScholarResponse);
+
+      if (!termOfScholarResponse) {
+        messageApi.open({
+          type: "error",
+          content:
+            "Scholar-Term relation could not be created. Please try again.",
+        });
+        return;
+      }
+
+      messageApi.open({
+        type: "success",
+        content: "Scholar added successfully!",
+      });
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      messageApi.open({
+        type: "error",
+        content: "An unexpected error occurred. Please try again.",
+      });
     }
-
-    const termValues = {
-      name: values.name,
-      startDate: values.startDate.format("YYYY-MM-DD"),
-      endDate: values.endDate.format("YYYY-MM-DD"),
-      responsibleAcademician: values.responsibleAcademician
-    }
-
-
-    const scholarTermValues = {}
   };
 
   return (
     <Card>
-       {contextHolder}
+      {contextHolder}
       <Form
+      form={form}
         labelAlign="left"
         labelWrap={true}
         layout="horizontal"
@@ -76,7 +210,7 @@ const BursiyerEkle = () => {
         variant="outlined"
         clearOnDestroy={false}
         onFinish={handleFinish}
-        onFinishFailed={() => setIsOpenModel(true)}
+        onFinishFailed={() => error()}
       >
         <Row>
           <Card>
@@ -164,15 +298,82 @@ const BursiyerEkle = () => {
                   ]}
                 >
                   <Select
-                    mode="tags"
+                    mode="single"
                     style={{ width: "100%" }}
                     placeholder="Select Academician"
                     onChange={handleChange}
                     options={academicianOptions}
-                    styles={{width:"100px"}}
+                    styles={{ width: "100px" }}
                   />
                 </Form.Item>
               </Row>
+              <Form.Item
+                colon={true}
+                htmlFor="input"
+                label={"Entry Documents"}
+                name={"entryDocuments"}
+                required={true}
+                rules={[
+                  {
+                    required: true,
+                    message: `Entry Documents are necessary`,
+                  },
+                ]}
+                initialValue={requiredDocumentsOnEntry.map(doc => doc.value)}
+              >
+                <Select
+                  mode="multiple"
+                  style={{ width: "100%" }}
+                  placeholder="Select Documents"
+                  styles={{ width: "100px" }}
+                  options={allRequiredDocuments}
+                />
+              </Form.Item>
+              <Form.Item
+                colon={true}
+                htmlFor="input"
+                label={"Exit Documents"}
+                name={"exitDocuments"}
+                required={true}
+                rules={[
+                  {
+                    required: true,
+                    message: `Exit Documents are necessary`,
+                  },
+                ]}
+              >
+                <Select
+                  mode="multiple"
+                  style={{ width: "100%" }}
+                  placeholder="Select Documents"
+                  styles={{ width: "100px" }}
+                  options={allRequiredDocuments}
+                  defaultValue={requiredDocumentsOnExit}
+                />
+              </Form.Item>
+              <Form.Item
+                colon={true}
+                htmlFor="input"
+                label={"Ongoing Documents"}
+                name={"ongoingDocuments"}
+                required={true}
+                rules={[
+                  {
+                    required: true,
+                    message: `Ongoing Documents are necessary`,
+                  },
+                ]}
+              >
+                <Select
+                  mode="multiple"
+                  style={{ width: "100%" }}
+                  placeholder="Select Documents"
+                  styles={{ width: "100px" }}
+                  options={allRequiredDocuments}
+                  defaultValue={requiredDocumentsOnAttendance}
+                  opti
+                />
+              </Form.Item>
             </Col>
           </Card>
         </Row>
@@ -180,8 +381,9 @@ const BursiyerEkle = () => {
           Submit
         </Button>
       </Form>
-      <Modal open={isOpenModal}
-      onCancel={() => setIsOpenModel(false)}>FORM HATASI</Modal>
+      <Modal open={isOpenModal} onCancel={() => setIsOpenModel(false)}>
+        FORM HATASI
+      </Modal>
     </Card>
   );
 };
