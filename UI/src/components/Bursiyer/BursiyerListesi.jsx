@@ -39,7 +39,10 @@ const BursiyerListesi = () => {
   }, []);
 
   const handleEdit = (e) => {
-    console.log(e);
+    const id = e.id;
+    const params = new URLSearchParams({ targetID: id });
+    window.location.href = `/scholar-info?${params.toString()}`;
+    console.log(id);
   };
 
   const handleDelete = async (record) => {
