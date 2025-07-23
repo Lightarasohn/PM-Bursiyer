@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import MainLayout from './components/MainLayout/MainLayout'
 import BursiyerListesi from './components/Bursiyer/BursiyerListesi'
 import BursiyerEkle from './components/Bursiyer/BursiyerEkle'
+import ScholarInfo from './components/Bursiyer/scholarInfo'
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           <Route path="bursiyer-listesi" element={<BursiyerListesi />} />
           <Route path="bursiyer-ekle" element={<BursiyerEkle />} />
+          <Route path="scholar-info" element={<ScholarInfo />} />
         </Route>
       </Routes>
     </BrowserRouter>
