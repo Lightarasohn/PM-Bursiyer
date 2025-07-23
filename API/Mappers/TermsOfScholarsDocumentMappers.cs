@@ -17,6 +17,7 @@ namespace API.Mappers
                 TermId = dto.TermId,
                 DocumentTypeId = dto.DocumentTypeId,
                 RealUploadDate = dto.RealUploadDate,
+                ExpectedUploadDate = dto.ExpectedUploadDate,
                 ListType = dto.ListType
             };
         }

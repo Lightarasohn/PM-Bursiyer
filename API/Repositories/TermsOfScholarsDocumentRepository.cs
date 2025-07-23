@@ -41,7 +41,7 @@ namespace API.Repositories
                 tsd.ScholarId == dto.ScholarId &&
                 tsd.TermId == dto.TermId &&
                 tsd.DocumentTypeId == dto.DocumentTypeId &&
-                !tsd.Deleted);
+                tsd.ListType == dto.ListType);
 
             if (existing != null)
             {

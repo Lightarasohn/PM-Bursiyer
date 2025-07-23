@@ -43,9 +43,6 @@ namespace API.Repositories
             if (alreadyExists)
                 throw new Exception("Bu Term ve DocumentType ilişkisi zaten mevcut.");
 
-            if (dto.ExpectedUploadDate.HasValue && dto.ExpectedUploadDate.Value < DateOnly.FromDateTime(DateTime.Today))
-                throw new Exception("Beklenen yükleme tarihi geçmiş bir tarih olamaz.");
-
             var termDocumentType = dto.ToModel();
             await _context.TermDocumentTypes.AddAsync(termDocumentType);
             await _context.SaveChangesAsync();
@@ -112,8 +109,6 @@ namespace API.Repositories
             _logger.LogInformation("UpdateTermDocumentTypeAsync executing");
 
             var entity = await GetTermDocumentTypeByIdAsync(termId, documentTypeId);
-
-            entity.ExpectedUploadDate = dto.ExpectedUploadDate;
 
             await _context.SaveChangesAsync();
             return entity;

@@ -14,6 +14,8 @@ namespace API.DTOs.TermsOfScholarsDocumentDTOs
         public int DocumentTypeId { get; set; }
 
         public DateOnly? RealUploadDate { get; set; }
+        
+        public DateOnly? ExpectedUploadDate { get; set; }
 
         public string? ListType { get; set; }
     }

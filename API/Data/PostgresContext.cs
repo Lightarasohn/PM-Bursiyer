@@ -146,7 +146,6 @@ public partial class PostgresContext : DbContext
 
             entity.Property(e => e.TermId).HasColumnName("TERM_Id");
             entity.Property(e => e.DocumentTypeId).HasColumnName("DOCUMENT_TYPE_Id");
-            entity.Property(e => e.ExpectedUploadDate).HasColumnName("EXPECTED_UPLOAD_DATE");
             entity.Property(e => e.ListType)
                 .HasColumnType("character varying")
                 .HasColumnName("LIST_TYPE");
@@ -195,6 +194,7 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.Deleted)
                 .HasDefaultValue(false)
                 .HasColumnName("DELETED");
+            entity.Property(e => e.ExpectedUploadDate).HasColumnName("EXPECTED_UPLOAD_DATE");
             entity.Property(e => e.ListType)
                 .HasColumnType("character varying")
                 .HasColumnName("LIST_TYPE");
