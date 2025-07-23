@@ -1,0 +1,150 @@
+/* BursiyerEkle.css */
+
+/* Form genel stilleri */
+.ant-form-item-label > label {
+  font-weight: 600;
+  color: #262626;
+}
+
+/* Input ve Select stilleri */
+.ant-input,
+.ant-select-selector,
+.ant-picker {
+  border-radius: 8px !important;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s ease;
+}
+
+.ant-input:hover,
+.ant-select-selector:hover,
+.ant-picker:hover {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.ant-input:focus,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* Button stilleri */
+.ant-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.ant-btn-primary {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
+}
+
+/* Card stilleri */
+.ant-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.ant-card-head-title {
+  font-weight: 600;
+  color: #262626;
+}
+
+/* Select dropdown stilleri */
+.ant-select-dropdown {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.ant-select-item-option:hover {
+  background-color: #f5f5f5;
+}
+
+/* Date picker stilleri */
+.ant-picker-dropdown {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Form validation stilleri */
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-select-selector,
+.ant-form-item-has-error .ant-picker {
+  border-color: #ff4d4f;
+  box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2);
+}
+
+.ant-form-item-explain-error {
+  color: #ff4d4f;
+  font-size: 14px;
+}
+
+/* Loading spinner */
+.ant-spin-dot-item {
+  background-color: #1890ff;
+}
+
+/* Modal stilleri */
+.ant-modal {
+  border-radius: 12px;
+}
+
+.ant-modal-content {
+  border-radius: 12px;
+}
+
+/* Responsive tasarım */
+@media (max-width: 768px) {
+  .ant-col-xs-24 {
+    margin-bottom: 16px;
+  }
+  
+  .ant-form-item {
+    margin-bottom: 20px;
+  }
+}
+
+/* Hover efektleri */
+.ant-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  transition: box-shadow 0.3s ease;
+}
+
+/* Title stilleri */
+.ant-typography h4 {
+  margin-bottom: 16px !important;
+}
+
+/* Divider stilleri */
+.ant-divider {
+  border-color: #f0f0f0;
+}
+
+/* Form geçiş animasyonları */
+.ant-form-item {
+  transition: all 0.3s ease;
+}
+
+.ant-form-item-control {
+  transition: all 0.3s ease;
+}
