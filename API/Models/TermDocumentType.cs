@@ -9,8 +9,6 @@ public partial class TermDocumentType
 
     public int DocumentTypeId { get; set; }
 
-    public DateOnly? ExpectedUploadDate { get; set; }
-
     public string? ListType { get; set; }
 
     public virtual DocumentType DocumentType { get; set; } = null!;
