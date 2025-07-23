@@ -40,7 +40,7 @@ builder.Services.AddScoped<ITermRepository, TermRepository>();
 builder.Services.AddScoped<ITermDocumentTypeRepository, TermDocumentTypeRepository>();
 builder.Services.AddScoped<ITermsOfScholarRepository, TermsOfScholarRepository>();
 builder.Services.AddScoped<ITermsOfScholarsDocumentRepository, TermsOfScholarsDocumentRepository>();
-
+builder.Services.AddScoped<ISystemConstantsRepository, SystemConstantsRepository>();
 
 
 var app = builder.Build();

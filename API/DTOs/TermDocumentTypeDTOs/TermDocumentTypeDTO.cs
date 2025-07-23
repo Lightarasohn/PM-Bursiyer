@@ -12,5 +12,6 @@ namespace API.DTOs.TermDocumentTypeDTOs
         public int DocumentTypeId { get; set; }
 
         public DateOnly? ExpectedUploadDate { get; set; }
+        public string? ListType { get; set; } 
     }
 }

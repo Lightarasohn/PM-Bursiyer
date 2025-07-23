@@ -22,6 +22,8 @@ public partial class PostgresContext : DbContext
 
     public virtual DbSet<Scholar> Scholars { get; set; }
 
+    public virtual DbSet<SystemConstant> SystemConstants { get; set; }
+
     public virtual DbSet<Term> Terms { get; set; }
 
     public virtual DbSet<TermDocumentType> TermDocumentTypes { get; set; }
@@ -86,6 +88,8 @@ public partial class PostgresContext : DbContext
 
             entity.ToTable("SCHOLAR");
 
+            entity.HasIndex(e => e.Id, "SCHOLAR_Id_key").IsUnique();
+
             entity.Property(e => e.Deleted)
                 .HasDefaultValue(false)
                 .HasColumnName("DELETED");
@@ -97,11 +101,27 @@ public partial class PostgresContext : DbContext
                 .HasColumnName("NAME_SURNAME");
         });
 
+        modelBuilder.Entity<SystemConstant>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("SYSTEM_CONSTANTS_pkey");
+
+            entity.ToTable("SYSTEM_CONSTANTS");
+
+            entity.Property(e => e.ConstantName)
+                .HasMaxLength(100)
+                .HasColumnName("CONSTANT_NAME");
+            entity.Property(e => e.ValueText)
+                .HasMaxLength(100)
+                .HasColumnName("VALUE_TEXT");
+        });
+
         modelBuilder.Entity<Term>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("TERM_pkey");
 
             entity.ToTable("TERM");
+
+            entity.HasIndex(e => e.Id, "TERM_Id_key").IsUnique();
 
             entity.Property(e => e.Deleted)
                 .HasDefaultValue(false)
@@ -127,6 +147,9 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.TermId).HasColumnName("TERM_Id");
             entity.Property(e => e.DocumentTypeId).HasColumnName("DOCUMENT_TYPE_Id");
             entity.Property(e => e.ExpectedUploadDate).HasColumnName("EXPECTED_UPLOAD_DATE");
+            entity.Property(e => e.ListType)
+                .HasColumnType("character varying")
+                .HasColumnName("LIST_TYPE");
 
             entity.HasOne(d => d.DocumentType).WithMany(p => p.TermDocumentTypes)
                 .HasForeignKey(d => d.DocumentTypeId)
