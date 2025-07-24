@@ -1,8 +1,15 @@
+using System.Text;
+using System.Text.Unicode;
 using API.Data;
 using API.Interfaces;
 using API.Models;
 using API.Repositories;
+using API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,16 +17,43 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddNewtonsoftJson(option =>
     option.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 );
+
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<PostgresContext>(options => options.UseNpgsql(
     builder.Configuration.GetConnectionString("SupabaseConnection")
 ));
 builder.Services.AddLogging();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+
+builder.Services.AddSwaggerGen(option =>
 {
-    c.SwaggerDoc("v1", new() { Title = "PM Bursiyer API", Version = "v1" });
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "PM Bursiyer API", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
 });
+
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhostClient", policy =>
@@ -30,7 +64,26 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddAuthentication(options =>
+    options.DefaultScheme =
+    options.DefaultSignInScheme =
+    options.DefaultForbidScheme =
+    options.DefaultSignOutScheme =
+    options.DefaultChallengeScheme =
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme
+).
+AddJwtBearer(options => 
+options.TokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuer = true,
+    ValidIssuer = builder.Configuration["JWT:ISSUER"],
+    ValidateAudience = true,
+    ValidAudience = builder.Configuration["JWT:AUDIENCE"],
+    ValidateIssuerSigningKey = true,
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:SIGNINKEY"]!))
+});
 
+builder.Services.AddAuthorization();
 
 // Dependency Injection
 builder.Services.AddScoped<IAcademicianRepository, AcademicianRepository>();
@@ -41,6 +94,9 @@ builder.Services.AddScoped<ITermDocumentTypeRepository, TermDocumentTypeReposito
 builder.Services.AddScoped<ITermsOfScholarRepository, TermsOfScholarRepository>();
 builder.Services.AddScoped<ITermsOfScholarsDocumentRepository, TermsOfScholarsDocumentRepository>();
 builder.Services.AddScoped<ISystemConstantsRepository, SystemConstantsRepository>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 
 var app = builder.Build();
@@ -60,9 +116,9 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowLocalhostClient");
 
-app.UseAuthorization();
-
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

@@ -32,6 +32,8 @@ public partial class PostgresContext : DbContext
 
     public virtual DbSet<TermsOfScholarsDocument> TermsOfScholarsDocuments { get; set; }
 
+    public virtual DbSet<User> Users { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql("Name=SupabaseConnection");
 
@@ -184,20 +186,20 @@ public partial class PostgresContext : DbContext
 
         modelBuilder.Entity<TermsOfScholarsDocument>(entity =>
         {
-            entity.HasKey(e => new { e.ScholarId, e.TermId, e.DocumentTypeId }).HasName("TERMS_OF_SCHOLARS_DOCUMENT_pkey");
+            entity.HasKey(e => new { e.ScholarId, e.TermId, e.DocumentTypeId, e.ListType }).HasName("TERMS_OF_SCHOLARS_DOCUMENT_pkey");
 
             entity.ToTable("TERMS_OF_SCHOLARS_DOCUMENT");
 
             entity.Property(e => e.ScholarId).HasColumnName("SCHOLAR_Id");
             entity.Property(e => e.TermId).HasColumnName("TERM_Id");
             entity.Property(e => e.DocumentTypeId).HasColumnName("DOCUMENT_TYPE_Id");
+            entity.Property(e => e.ListType)
+                .HasColumnType("character varying")
+                .HasColumnName("LIST_TYPE");
             entity.Property(e => e.Deleted)
                 .HasDefaultValue(false)
                 .HasColumnName("DELETED");
             entity.Property(e => e.ExpectedUploadDate).HasColumnName("EXPECTED_UPLOAD_DATE");
-            entity.Property(e => e.ListType)
-                .HasColumnType("character varying")
-                .HasColumnName("LIST_TYPE");
             entity.Property(e => e.RealUploadDate).HasColumnName("REAL_UPLOAD_DATE");
 
             entity.HasOne(d => d.DocumentType).WithMany(p => p.TermsOfScholarsDocuments)
@@ -211,6 +213,54 @@ public partial class PostgresContext : DbContext
             entity.HasOne(d => d.Term).WithMany(p => p.TermsOfScholarsDocuments)
                 .HasForeignKey(d => d.TermId)
                 .HasConstraintName("TERMS_OF_SCHOLARS_DOCUMENT_TERM_Id_fkey");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("USER_pkey");
+
+            entity.ToTable("USER");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Address).HasColumnName("ADDRESS");
+            entity.Property(e => e.BillingNumber)
+                .HasMaxLength(255)
+                .HasColumnName("BILLING_NUMBER");
+            entity.Property(e => e.CreDate).HasColumnName("CRE_DATE");
+            entity.Property(e => e.CreUser).HasColumnName("CRE_USER");
+            entity.Property(e => e.DelDate).HasColumnName("DEL_DATE");
+            entity.Property(e => e.DelUser).HasColumnName("DEL_USER");
+            entity.Property(e => e.Deleted).HasColumnName("DELETED");
+            entity.Property(e => e.Email)
+                .HasMaxLength(50)
+                .HasColumnName("EMAIL");
+            entity.Property(e => e.FirmId).HasColumnName("FIRM_ID");
+            entity.Property(e => e.FirmName)
+                .HasMaxLength(255)
+                .HasColumnName("FIRM_NAME");
+            entity.Property(e => e.Language)
+                .HasMaxLength(2)
+                .IsFixedLength()
+                .HasColumnName("LANGUAGE");
+            entity.Property(e => e.NameSurname)
+                .HasMaxLength(50)
+                .HasColumnName("NAME_SURNAME");
+            entity.Property(e => e.Password).HasColumnName("PASSWORD");
+            entity.Property(e => e.PasswordSalt).HasColumnName("PASSWORD_SALT");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(50)
+                .HasColumnName("PHONE");
+            entity.Property(e => e.TaxOfficeName)
+                .HasMaxLength(255)
+                .HasColumnName("TAX_OFFICE_NAME");
+            entity.Property(e => e.UpdDate).HasColumnName("UPD_DATE");
+            entity.Property(e => e.UpdUser).HasColumnName("UPD_USER");
+            entity.Property(e => e.UserType)
+                .HasMaxLength(255)
+                .HasColumnName("USER_TYPE");
+            entity.Property(e => e.Username)
+                .HasMaxLength(255)
+                .HasColumnName("USERNAME");
         });
         modelBuilder.HasSequence<int>("seq_schema_version", "graphql").IsCyclic();
 

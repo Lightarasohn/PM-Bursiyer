@@ -115,7 +115,7 @@ namespace API.Repositories
 
             TermsOfScholarsDocument termsOfScholarsDocumentToUpdate = await GetTermsOfScholarsDocumentByIdAsync(scholarId, termId, documentTypeId);
             termsOfScholarsDocumentToUpdate.DocumentTypeId = termsOfScholarsDocumentsDto.DocumentTypeId;
-            termsOfScholarsDocumentToUpdate.ListType = termsOfScholarsDocumentsDto.ListType;
+            termsOfScholarsDocumentToUpdate.ListType = termsOfScholarsDocumentsDto.ListType!;
             termsOfScholarsDocumentToUpdate.RealUploadDate = termsOfScholarsDocumentsDto.RealUploadDate;
             termsOfScholarsDocumentToUpdate.ScholarId = termsOfScholarsDocumentsDto.ScholarId;
             termsOfScholarsDocumentToUpdate.TermId = termsOfScholarsDocumentsDto.TermId;
