@@ -403,7 +403,7 @@ const BursiyerEkle = () => {
             size="large"
           >
             <Row gutter={32}>
-              {/* Sol Kolon - Scholar Information */}
+              
               <Col xs={24} lg={8}>
                 <div style={{ marginBottom: '24px' }}>
                   <Title level={4} style={{ 
@@ -446,7 +446,7 @@ const BursiyerEkle = () => {
                 </div>
               </Col>
 
-              {/* Orta Kolon - Term Information */}
+              
               <Col xs={24} lg={8}>
                 <div style={{ marginBottom: '24px' }}>
                   <Title level={4} style={{ 
@@ -533,7 +533,7 @@ const BursiyerEkle = () => {
                 </div>
               </Col>
 
-              {/* Sağ Kolon - Required Documents */}
+              
               <Col xs={24} lg={8}>
                 <div style={{ marginBottom: '24px' }}>
                   <Title level={4} style={{ 
@@ -601,7 +601,7 @@ const BursiyerEkle = () => {
               </Col>
             </Row>
 
-            {/* Submit Button */}
+            
             <div style={{ 
               textAlign: 'center',
               paddingTop: '16px',
