@@ -15,7 +15,7 @@ public partial class TermsOfScholarsDocument
 
     public bool Deleted { get; set; }
 
-    public string? ListType { get; set; }
+    public string ListType { get; set; } = null!;
 
     public DateOnly? ExpectedUploadDate { get; set; }
 

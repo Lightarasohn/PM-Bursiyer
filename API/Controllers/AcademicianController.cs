@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.DTOs.AcademicianDTOs;
 using API.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -20,6 +21,7 @@ namespace API.Controllers
 
 
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllAcademicians()
         {
@@ -55,6 +57,7 @@ namespace API.Controllers
                 return BadRequest($"Bir Hata Oluştu: {ex.Message}");
             }
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAcademicianById([FromRoute] int id)
