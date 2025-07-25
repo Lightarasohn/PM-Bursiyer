@@ -8,6 +8,6 @@ namespace API.Interfaces
 {
     public interface IScholarAddService
     {
-        public Task<bool> AddScholar(ScholarAddDto scholarAddDto);
+        public Task<bool> AddScholarFull(ScholarAddDto scholarAddDto);
     }
 }
