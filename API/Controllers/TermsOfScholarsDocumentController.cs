@@ -78,6 +78,23 @@ namespace API.Controllers
             }
         }
 
+        [HttpPost("range")]
+        public async Task<IActionResult> AddRange([FromBody] List<TermsOfScholarsDocumentDTO> list)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var createdList = await _repository.AddRangeTermsOfScholarsDocumentAsync(list);
+                return Ok(createdList);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Belge eklenemedi: {ex.Message}");
+            }
+        }
+
         [HttpPut("{scholarId}/{termId}/{documentTypeId}")]
         public async Task<IActionResult> Update([FromBody] TermsOfScholarsDocumentDTO dto, int scholarId, int termId, int documentTypeId)
         {

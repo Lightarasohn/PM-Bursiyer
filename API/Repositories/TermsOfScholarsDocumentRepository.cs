@@ -20,6 +20,82 @@ namespace API.Repositories
             _context = context;
             _logger = logger;
         }
+
+        public async Task<List<TermsOfScholarsDocument>> AddRangeTermsOfScholarsDocumentAsync(List<TermsOfScholarsDocumentDTO> list)
+        {
+            _logger.LogInformation($"AddRangeTermsOfScholarsDocumentAsync executing with {list.Count} items");
+            
+            if (!list.Any())
+                return new List<TermsOfScholarsDocument>();
+
+            // İlk öğeden scholarId ve termId'yi al (hepsi aynı olacak)
+            var scholarId = list.First().ScholarId;
+            var termId = list.First().TermId;
+            var documentTypeIds = list.Select(dto => dto.DocumentTypeId).Distinct().ToList();
+
+            // Tek sorguda gerekli verileri çek
+            var scholar = await _context.Scholars.FirstOrDefaultAsync(s => s.Id == scholarId && !s.Deleted);
+            if (scholar == null)
+                throw new Exception($"Scholar with ID={scholarId} not found");
+
+            var term = await _context.Terms.FirstOrDefaultAsync(t => t.Id == termId && !t.Deleted);
+            if (term == null)
+                throw new Exception($"Term with ID={termId} not found");
+
+            var documentTypes = await _context.DocumentTypes
+                .Where(dt => documentTypeIds.Contains(dt.Id) && !dt.Deleted)
+                .ToDictionaryAsync(dt => dt.Id, dt => dt);
+
+            // Mevcut dökümanları kontrol et
+            var existingDocuments = await _context.TermsOfScholarsDocuments
+                .Where(tsd => tsd.ScholarId == scholarId &&
+                            tsd.TermId == termId &&
+                            documentTypeIds.Contains(tsd.DocumentTypeId))
+                .Select(tsd => new { tsd.DocumentTypeId, tsd.ListType })
+                .ToHashSetAsync();
+
+            var entitiesToAdd = new List<TermsOfScholarsDocument>();
+            var errors = new List<string>();
+
+            foreach (var dto in list)
+            {
+                // DocumentType validasyonu
+                if (!documentTypes.ContainsKey(dto.DocumentTypeId))
+                {
+                    errors.Add($"DocumentType with ID={dto.DocumentTypeId} not found");
+                    continue;
+                }
+
+                // Mevcut döküman kontrolü
+                var documentKey = new { dto.DocumentTypeId, dto.ListType };
+                if (existingDocuments.Contains(documentKey!))
+                {
+                    errors.Add($"Document already exists for ScholarId={scholarId}, TermId={termId}, DocumentTypeId={dto.DocumentTypeId}, ListType={dto.ListType}");
+                    continue;
+                }
+
+                // Entity oluştur ve listeye ekle
+                var entity = dto.ToModel();
+                entitiesToAdd.Add(entity);
+            }
+
+            // Eğer hata varsa exception fırlat
+            if (errors.Any())
+            {
+                throw new Exception($"Validation errors: {string.Join("; ", errors)}");
+            }
+
+            // Toplu ekleme yap
+            if (entitiesToAdd.Any())
+            {
+                await _context.TermsOfScholarsDocuments.AddRangeAsync(entitiesToAdd);
+                await _context.SaveChangesAsync();
+            }
+
+            _logger.LogInformation($"Successfully added {entitiesToAdd.Count} TermsOfScholarsDocuments");
+            return entitiesToAdd;
+        }
+
         public async Task<TermsOfScholarsDocument> AddTermsOfScholarsDocumentAsync(TermsOfScholarsDocumentDTO dto)
         {
             _logger.LogInformation("AddTermsOfScholarsDocumentAsync executing");
@@ -33,10 +109,6 @@ namespace API.Repositories
             var documentType = await _context.DocumentTypes.FirstOrDefaultAsync(dt => dt.Id == dto.DocumentTypeId && !dt.Deleted)
                 ?? throw new Exception($"DocumentType with ID={dto.DocumentTypeId} not found");
 
-            var termsOfScholar = await _context.TermsOfScholars
-                .FirstOrDefaultAsync(ts => ts.ScholarId == dto.ScholarId && ts.TermId == dto.TermId && !ts.Deleted)
-                ?? throw new Exception($"No TermsOfScholar found for ScholarId={dto.ScholarId} and TermId={dto.TermId}");
-
             var existing = await _context.TermsOfScholarsDocuments.FirstOrDefaultAsync(tsd =>
                 tsd.ScholarId == dto.ScholarId &&
                 tsd.TermId == dto.TermId &&
@@ -49,7 +121,6 @@ namespace API.Repositories
             }
 
             var entity = dto.ToModel();
-            entity.Deleted = false;
 
             await _context.TermsOfScholarsDocuments.AddAsync(entity);
             await _context.SaveChangesAsync();

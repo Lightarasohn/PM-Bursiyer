@@ -15,5 +15,6 @@ namespace API.DTOs.UserDTOs
 
         public string? Phone { get; set; }
 
+        public string? Language { get; set; }
     }
 }

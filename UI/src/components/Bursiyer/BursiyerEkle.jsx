@@ -36,8 +36,7 @@ const BursiyerEkle = () => {
   const [isOpenModal, setIsOpenModel] = useState(false);
   const [requiredDocumentsOnExit, setRequiredDocumentsOnExit] = useState([]);
   const [requiredDocumentsOnEntry, setRequiredDocumentsOnEntry] = useState([]);
-  const [requiredDocumentsOnAttendance, setRequiredDocumentsOnAttendance] =
-    useState([]);
+  const [requiredDocumentsOnAttendance, setRequiredDocumentsOnAttendance] = useState([]);
   const [allRequiredDocuments, setAllRequiredDocuments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -144,514 +143,444 @@ const BursiyerEkle = () => {
     fetchAcademician();
   }, []);
 
-  const handleFinish = async (values) => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    try {
-      console.log(values);
-      // Scholar ekleme
-      const scholarValues = {
-        nameSurname: values.nameSurname,
-        email: values.email,
-      };
-
-      const scholarResponse = await AddScholarAPI(scholarValues);
-      if (!scholarResponse) {
-        messageApi.open({
-          type: "error",
-          content: "Scholar could not be added. Please try again.",
-        });
-        return;
-      }
-
-      // Term ekleme
-      const termValues = {
-        name: values.name,
-        startDate: values.startDate.format("YYYY-MM-DD"),
-        endDate: values.endDate.format("YYYY-MM-DD"),
-        responsibleAcademician: values.responsibleAcademician,
-      };
-
-      const termResponse = await addTermAPI(termValues);
-
-      if (!termResponse) {
-        messageApi.open({
-          type: "error",
-          content: "Term could not be added. Please try again.",
-        });
-        return;
-      }
-
-      // TermDocumentTypes ekleme
-      const allDocIds = [
-        ...(values.entryDocuments || []),
-        ...(values.exitDocuments || []),
-        ...(values.ongoingDocuments || []),
-      ];
-
-      const uniqueDocIds = Array.from(new Set(allDocIds));
-
-      const getListType = (docId) => {
-        if ((values.exitDocuments || []).includes(docId)) return "EXIT";
-        if ((values.ongoingDocuments || []).includes(docId)) return "ONGOING";
-        return "ENTRY";
-      };
-      console.log(uniqueDocIds);
-
-      for (const docId of uniqueDocIds) {
-        const listType = getListType(docId);
-
-        const payload = {
-          termId: termResponse.id,
-          documentTypeId: docId,
-          listType,
-        };
-
-        const termDocumentTypeResponse = await AddTermDocumentTypesAPI(payload);
-        if (!termDocumentTypeResponse) {
-          messageApi.open({
-            type: "error",
-            content:
-              "Necessary documents could not be added to the created term. Please try again.",
-          });
-          return;
-        }
-      }
-
-      // TermOfScholar ekleme
-      const termOfScholarValues = {
-        scholarId: scholarResponse.id,
-        termId: termResponse.id,
-        startDate: new Date().toISOString().split("T")[0],
-        endDate: null,
-      };
-
-      const termOfScholarResponse = await addTermOfScholarAPI(
-        termOfScholarValues
-      );
-
-      if (!termOfScholarResponse) {
-        messageApi.open({
-          type: "error",
-          content:
-            "Scholar-Term relation could not be created. Please try again.",
-        });
-        return;
-      }
-
-      // TermOfScholarDocuments ekleme
-      if (values.entryDocuments && values.entryDocuments.length > 0) {
-        for (const item of values.entryDocuments) {
-          const TermOfScholarDocumentValues = {
-            scholarId: scholarResponse.id,
-            termId: termResponse.id,
-            documentTypeId: item,
-            realUploadDate: null,
-            expectedUploadDate: termResponse.startDate,
-            listType: "ENTRY",
-          };
-
-          const termDocumentTypeResponse = await AddTermOfScholarDocumentsAPI(
-            TermOfScholarDocumentValues
-          );
-          if (!termDocumentTypeResponse) {
-            messageApi.open({
-              type: "error",
-              content:
-                "Entry documents could not be added to the created term of the scholar. Please try again.",
-            });
-            return;
-          }
-        }
-      }
-
-      // Exit documents için
-      if (values.exitDocuments && values.exitDocuments.length > 0) {
-        for (const item of values.exitDocuments) {
-          const TermOfScholarDocumentValues = {
-            scholarId: scholarResponse.id,
-            termId: termResponse.id,
-            documentTypeId: item,
-            realUploadDate: null,
-            expectedUploadDate: termResponse.endDate,
-            listType: "EXIT",
-          };
-
-          const termDocumentTypeResponse = await AddTermOfScholarDocumentsAPI(
-            TermOfScholarDocumentValues
-          );
-          if (!termDocumentTypeResponse) {
-            messageApi.open({
-              type: "error",
-              content:
-                "Exit documents could not be added to the created term of the scholar. Please try again.",
-            });
-            return;
-          }
-        }
-      }
-
-      // Ongoing documents için
-      if (values.ongoingDocuments && values.ongoingDocuments.length > 0) {
-        const ongoingDocumentUploadRateResponse = await GetSystemConstantsAPI(
-          "ongoing"
-        );
-        const ongoingDocumentUploadRate =
-          ongoingDocumentUploadRateResponse?.[0];
-
-        if (!ongoingDocumentUploadRate) {
-          messageApi.open({
-            type: "error",
-            content:
-              "Could not get ongoing document upload rate. Please try again.",
-          });
-          return;
-        }
-
-        const uploadInterval = parseInt(ongoingDocumentUploadRate, 10);
-
-        for (const item of values.ongoingDocuments) {
-          let currentDate = new Date(termResponse.startDate);
-          const endDate = new Date(termResponse.endDate);
-
-          while (currentDate <= endDate) {
-            const TermOfScholarDocumentValues = {
-              scholarId: scholarResponse.id,
-              termId: termResponse.id,
-              documentTypeId: item,
-              realUploadDate: null,
-              expectedUploadDate: currentDate.toISOString().split("T")[0],
-              listType: "ONGOING",
-            };
-
-            const termDocumentTypeResponse = await AddTermOfScholarDocumentsAPI(
-              TermOfScholarDocumentValues
-            );
-            if (!termDocumentTypeResponse) {
-              messageApi.open({
-                type: "error",
-                content:
-                  "Ongoing documents could not be added to the created term. Please try again.",
-              });
-              return;
-            }
-            currentDate.setMonth(currentDate.getMonth() + uploadInterval);
-          }
-        }
-      }
-
-      messageApi.open({
-        type: "success",
-        content: "Scholar added successfully!",
-      });
-
-      form.resetFields();
-    } catch (error) {
-      console.error("Error in form submission:", error);
-      messageApi.open({
-        type: "error",
-        content: "An unexpected error occurred. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleFinish = (values) => {
+    values.endDate = values.endDate.format("YYYY-MM-DD")
+    values.startDate = values.startDate.format("YYYY-MM-DD")
+    console.log(values)
   };
 
   return (
-    <div style={{ 
-      padding: '24px', 
-      background: '#f5f5f5',
-      minHeight: '100vh'
-    }}>
-      {contextHolder}
-      
-      <div style={{ 
-        maxWidth: '1200px', 
-        margin: '0 auto' 
-      }}>
-        <div style={{ 
-          textAlign: 'center', 
-          marginBottom: '32px' 
-        }}>
-          <Title level={2} style={{ 
-            color: '#1890ff', 
-            marginBottom: '8px' 
-          }}>
+    <>
+  <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    {contextHolder}
+    <Card
+      title={
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <Typography.Title level={2} style={{ margin: 0, color: '#1890ff' }}>
             Add New Scholar
-          </Title>
-          <Text type="secondary" style={{ fontSize: '16px' }}>
-            Fill in the information below to register a new scholar
-          </Text>
+          </Typography.Title>
+          <Typography.Text type="secondary">
+            Create a new scholar profile and assign term details
+          </Typography.Text>
         </div>
-
-        <Card 
-          style={{ 
-            borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            border: 'none'
-          }}
-        >
-          <Form
-            form={form}
-            layout="vertical"
-            name="bursiyer"
-            requiredMark="optional"
-            scrollToFirstError={true}
-            onFinish={handleFinish}
-            onFinishFailed={() => error()}
-            size="large"
-          >
-            <Row gutter={32}>
-              
-              <Col xs={24} lg={8}>
-                <div style={{ marginBottom: '24px' }}>
-                  <Title level={4} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    color: '#262626',
-                    marginBottom: '16px'
-                  }}>
-                    <UserOutlined style={{ color: '#1890ff' }} />
+      }
+      style={{
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+      }}
+    >
+      <Form
+        form={form}
+        labelAlign="left"
+        labelWrap={true}
+        layout="vertical"
+        name="bursiyer"
+        requiredMark={true}
+        scrollToFirstError={true}
+        variant="outlined"
+        clearOnDestroy={false}
+        onFinish={handleFinish}
+        onFinishFailed={() => error()}
+      >
+        <Row gutter={[24, 24]}>
+          {/* Scholar Information Section */}
+          <Col xs={24} lg={12}>
+            <Card
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  
+                  <Typography.Title level={4} style={{ margin: 0 }}>
                     Scholar Information
-                  </Title>
-                  
-                  <Form.Item
-                    label="Full Name"
-                    name="nameSurname"
-                    rules={[{ required: true, message: "Scholar name is required" }]}
-                    style={{ marginBottom: '16px' }}
-                  >
-                    <Input 
-                      placeholder="Enter scholar's full name"
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </Form.Item>
-                  
-                  <Form.Item
-                    label="Email Address"
-                    name="email"
-                    rules={[
-                      { required: true, message: "Email is required" },
-                      { type: "email", message: "Please enter a valid email address" },
-                    ]}
-                    style={{ marginBottom: '0' }}
-                  >
-                    <Input 
-                      placeholder="scholar@university.edu"
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </Form.Item>
+                  </Typography.Title>
                 </div>
-              </Col>
+              }
+              style={{
+                height: '100%',
+                borderRadius: '8px',
+                border: '1px solid #e6f7ff',
+                background: '#fafafa'
+              }}
+              headStyle={{ background: '#e6f7ff', borderRadius: '8px 8px 0 0' }}
+            >
+              <div style={{ padding: '8px 0' }}>
+                <Form.Item
+                  label={
+                    <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                      Full Name
+                    </span>
+                  }
+                  name="nameSurname"
+                  rules={[
+                    { required: true, message: 'Scholar name is required' },
+                    { min: 2, message: 'Name must be at least 2 characters' }
+                  ]}
+                  style={{ marginBottom: '20px' }}
+                >
+                  <Input
+                    placeholder="Enter scholar's full name"
+                    size="large"
+                    style={{ borderRadius: '6px' }}
+                    prefix={
+                      <div style={{ color: '#bfbfbf', marginRight: '4px' }}>
+                        👤
+                      </div>
+                    }
+                  />
+                </Form.Item>
+                
+                <Form.Item
+                  label={
+                    <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                      Email Address
+                    </span>
+                  }
+                  name="email"
+                  rules={[
+                    { required: true, message: 'Email is required' },
+                    { type: 'email', message: 'Please enter a valid email address' }
+                  ]}
+                  style={{ marginBottom: '8px' }}
+                >
+                  <Input
+                    placeholder="scholar@university.edu"
+                    size="large"
+                    style={{ borderRadius: '6px' }}
+                    prefix={
+                      <div style={{ color: '#bfbfbf', marginRight: '4px' }}>
+                        📧
+                      </div>
+                    }
+                  />
+                </Form.Item>
+              </div>
+            </Card>
+          </Col>
 
-              
-              <Col xs={24} lg={8}>
-                <div style={{ marginBottom: '24px' }}>
-                  <Title level={4} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    color: '#262626',
-                    marginBottom: '16px'
-                  }}>
-                    <CalendarOutlined style={{ color: '#1890ff' }} />
-                    Term Information
-                  </Title>
+          {/* Term Information Section */}
+          <Col xs={24} lg={12}>
+            <Card
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   
-                  <Form.Item
-                    label="Term Name"
-                    name="name"
-                    rules={[{ required: true, message: "Term name is required" }]}
-                    style={{ marginBottom: '16px' }}
-                  >
-                    <Input 
-                      placeholder="e.g., Spring 2024"
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </Form.Item>
-                  
-                  <Form.Item
-                    label="Responsible Academician"
-                    name="responsibleAcademician"
-                    rules={[
-                      { required: true, message: "Responsible academician is required" },
-                    ]}
-                    style={{ marginBottom: '16px' }}
-                  >
-                    <Select
-                      placeholder="Select academician"
-                      options={academicianOptions}
-                      onChange={handleChange}
-                      style={{ borderRadius: '8px' }}
-                      showSearch
-                      filterOption={(input, option) =>
-                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  <Typography.Title level={4} style={{ margin: 0 }}>
+                    Term Details
+                  </Typography.Title>
+                </div>
+              }
+              style={{
+                height: '100%',
+                borderRadius: '8px',
+                border: '1px solid #e6f7ff',
+                background: '#fafafa'
+              }}
+              headStyle={{ background: '#e6f7ff', borderRadius: '8px 8px 0 0' }}
+            >
+              <div style={{ padding: '8px 0' }}>
+                <Form.Item
+                  label={
+                    <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                      Term Name
+                    </span>
+                  }
+                  name="name"
+                  rules={[{ required: true, message: 'Term name is required' }]}
+                  style={{ marginBottom: '20px' }}
+                >
+                  <Input
+                    placeholder="e.g., Spring 2024 Research Term"
+                    size="large"
+                    style={{ borderRadius: '6px' }}
+                    prefix={
+                      <div style={{ color: '#bfbfbf', marginRight: '4px' }}>
+                        📚
+                      </div>
+                    }
+                  />
+                </Form.Item>
+
+                <Row gutter={12}>
+                  <Col span={12}>
+                    <Form.Item
+                      label={
+                        <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                          Start Date
+                        </span>
                       }
-                    />
-                  </Form.Item>
-                  
-                  <Form.Item
-                    label="Start Date"
-                    name="startDate"
-                    rules={[
-                      { required: true, message: "Start date is required" },
-                    ]}
-                    style={{ marginBottom: '16px' }}
-                  >
-                    <DatePicker 
-                      style={{ width: "100%", borderRadius: '8px' }}
-                      placeholder="Select start date"
-                    />
-                  </Form.Item>
-                  
-                  <Form.Item
-                    label="End Date"
-                    name="endDate"
-                    rules={[
-                      { required: true, message: "End date is required" },
-                      ({ getFieldValue }) => ({
-                        validator(_, value) {
-                          const startDate = getFieldValue("startDate");
-                          if (!value || !startDate || value.isAfter(startDate)) {
-                            return Promise.resolve();
-                          }
-                          return Promise.reject(
-                            new Error("End date must be after start date")
-                          );
+                      name="startDate"
+                      rules={[
+                        {
+                          required: true,
+                          message: 'Start date is required',
                         },
-                      }),
-                    ]}
-                    style={{ marginBottom: '0' }}
-                  >
-                    <DatePicker 
-                      style={{ width: "100%", borderRadius: '8px' }}
-                      placeholder="Select end date"
-                    />
-                  </Form.Item>
-                </div>
-              </Col>
+                      ]}
+                      style={{ marginBottom: '20px' }}
+                    >
+                      <DatePicker
+                        placeholder="Select start date"
+                        size="large"
+                        style={{ width: '100%', borderRadius: '6px' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      label={
+                        <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                          End Date
+                        </span>
+                      }
+                      name="endDate"
+                      rules={[
+                        {
+                          required: true,
+                          message: 'End date is required',
+                        },
+                        ({ getFieldValue }) => ({
+                          validator(_, value) {
+                            const startDate = getFieldValue('startDate');
+                            if (!value || !startDate || value.isAfter(startDate)) {
+                              return Promise.resolve();
+                            }
+                            return Promise.reject(new Error('End date must be after start date'));
+                          },
+                        }),
+                      ]}
+                      style={{ marginBottom: '20px' }}
+                    >
+                      <DatePicker
+                        placeholder="Select end date"
+                        size="large"
+                        style={{ width: '100%', borderRadius: '6px' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-              
-              <Col xs={24} lg={8}>
-                <div style={{ marginBottom: '24px' }}>
-                  <Title level={4} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    color: '#262626',
-                    marginBottom: '16px'
-                  }}>
-                    <FileTextOutlined style={{ color: '#1890ff' }} />
-                    Required Documents
-                  </Title>
+                <Form.Item
+                  label={
+                    <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                      Responsible Academician
+                    </span>
+                  }
+                  name="responsibleAcademician"
+                  rules={[
+                    {
+                      required: true,
+                      message: 'Please select a responsible academician',
+                    },
+                  ]}
+                  style={{ marginBottom: '8px' }}
+                >
+                  <Select
+                    placeholder="Choose an academician"
+                    size="large"
+                    style={{ borderRadius: '6px' }}
+                    onChange={handleChange}
+                    options={academicianOptions}
+                    showSearch
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Documents Section */}
+        <Row style={{ marginTop: '24px' }}>
+          <Col span={24}>
+            <Card
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   
+                  <Typography.Title level={4} style={{ margin: 0 }}>
+                    Required Documents
+                  </Typography.Title>
+                </div>
+              }
+              style={{
+                borderRadius: '8px',
+                border: '1px solid #fff7e6',
+                background: '#fafafa'
+              }}
+              headStyle={{ background: '#fff7e6', borderRadius: '8px 8px 0 0' }}
+            >
+              <Row gutter={[24, 16]} style={{ padding: '8px 0' }}>
+                <Col xs={24} md={8}>
+                  <div style={{
+                    padding: '12px',
+                    background: '#f6ffed',
+                    borderRadius: '6px',
+                    border: '1px solid #b7eb8f',
+                    marginBottom: '8px'
+                  }}>
+                    <Typography.Text strong style={{ color: '#52c41a', display: 'block', marginBottom: '4px' }}>
+                      Entry Documents
+                    </Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                      Documents required at the beginning of the term
+                    </Typography.Text>
+                  </div>
                   <Form.Item
-                    label="Entry Documents"
                     name="entryDocuments"
                     rules={[
-                      { required: true, message: "Entry documents are required" },
+                      {
+                        required: true,
+                        message: 'Please select entry documents',
+                      },
                     ]}
                     style={{ marginBottom: '16px' }}
                   >
                     <Select
                       mode="multiple"
                       placeholder="Select entry documents"
+                      size="large"
+                      style={{ borderRadius: '6px' }}
                       options={allRequiredDocuments}
                       onChange={handleChange}
-                      style={{ borderRadius: '8px' }}
+                      
                     />
                   </Form.Item>
-                  
+                </Col>
+
+                <Col xs={24} md={8}>
+                  <div style={{
+                    padding: '12px',
+                    background: '#fff1f0',
+                    borderRadius: '6px',
+                    border: '1px solid #ffadd2',
+                    marginBottom: '8px'
+                  }}>
+                    <Typography.Text strong style={{ color: '#f5222d', display: 'block', marginBottom: '4px' }}>
+                      Exit Documents
+                    </Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                      Documents required at the end of the term
+                    </Typography.Text>
+                  </div>
                   <Form.Item
-                    label="Ongoing Documents"
+                    name="exitDocuments"
+                    rules={[
+                      {
+                        required: true,
+                        message: 'Please select exit documents',
+                      },
+                    ]}
+                    style={{ marginBottom: '16px' }}
+                  >
+                    <Select
+                      mode="multiple"
+                      placeholder="Select exit documents"
+                      size="large"
+                      style={{ borderRadius: '6px' }}
+                      options={allRequiredDocuments}
+                      onChange={handleChange}
+                      
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} md={8}>
+                  <div style={{
+                    padding: '12px',
+                    background: '#f9f0ff',
+                    borderRadius: '6px',
+                    border: '1px solid #d3adf7',
+                    marginBottom: '8px'
+                  }}>
+                    <Typography.Text strong style={{ color: '#722ed1', display: 'block', marginBottom: '4px' }}>
+                      Ongoing Documents
+                    </Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                      Documents required periodically during the term
+                    </Typography.Text>
+                  </div>
+                  <Form.Item
                     name="ongoingDocuments"
                     rules={[
-                      { required: true, message: "Ongoing documents are required" },
+                      {
+                        required: true,
+                        message: 'Please select ongoing documents',
+                      },
                     ]}
                     style={{ marginBottom: '16px' }}
                   >
                     <Select
                       mode="multiple"
                       placeholder="Select ongoing documents"
+                      size="large"
+                      style={{ borderRadius: '6px' }}
                       options={allRequiredDocuments}
                       onChange={handleChange}
-                      style={{ borderRadius: '8px' }}
+                      
                     />
                   </Form.Item>
-                  
-                  <Form.Item
-                    label="Exit Documents"
-                    name="exitDocuments"
-                    rules={[
-                      { required: true, message: "Exit documents are required" },
-                    ]}
-                    style={{ marginBottom: '0' }}
-                  >
-                    <Select
-                      mode="multiple"
-                      placeholder="Select exit documents"
-                      options={allRequiredDocuments}
-                      onChange={handleChange}
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </Form.Item>
-                </div>
-              </Col>
-            </Row>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+        </Row>
 
-            
-            <div style={{ 
-              textAlign: 'center',
-              paddingTop: '16px',
-              borderTop: '1px solid #f0f0f0'
-            }}>
-              <Space size="middle">
-                <Button
-                  size="large"
-                  onClick={() => form.resetFields()}
-                  style={{ 
-                    borderRadius: '8px',
-                    minWidth: '120px'
-                  }}
-                >
-                  Reset Form
-                </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={isSubmitting}
-                  disabled={isSubmitting}
-                  size="large"
-                  style={{ 
-                    borderRadius: '8px',
-                    minWidth: '120px',
-                    background: isSubmitting ? undefined : '#1890ff'
-                  }}
-                >
-                  {isSubmitting ? "Processing..." : "Add Scholar"}
-                </Button>
-              </Space>
-            </div>
-          </Form>
-        </Card>
-      </div>
+        {/* Submit Button */}
+        <Row justify="center" style={{ marginTop: '32px' }}>
+          <Col>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              size="large"
+              style={{
+                borderRadius: '8px',
+                padding: '8px 48px',
+                height: 'auto',
+                fontSize: '16px',
+                fontWeight: '500',
+                background: isSubmitting ? '#d9d9d9' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <span style={{ marginRight: '8px' }}>⏳</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <span style={{ marginRight: '8px' }}>✨</span>
+                  Create Scholar Profile
+                </>
+              )}
+            </Button>
+          </Col>
+        </Row>
+      </Form>
 
       <Modal 
         open={isOpenModal} 
         onCancel={() => setIsOpenModel(false)}
+        title="Form Error"
         footer={null}
         centered
+        style={{ borderRadius: '8px' }}
       >
-        <Alert
-          message="Form Error"
-          description="There was an error processing your form. Please check your inputs and try again."
-          type="error"
-          showIcon
-        />
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+          <Typography.Title level={4} style={{ color: '#f5222d' }}>
+            Form Validation Error
+          </Typography.Title>
+          <Typography.Text type="secondary">
+            Please check all required fields and try again.
+          </Typography.Text>
+        </div>
       </Modal>
-    </div>
+    </Card>
+  </div>
+</>
   );
 };
 

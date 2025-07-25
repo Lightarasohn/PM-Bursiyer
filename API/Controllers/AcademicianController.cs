@@ -21,7 +21,7 @@ namespace API.Controllers
 
 
 
-        [Authorize]
+
         [HttpGet]
         public async Task<IActionResult> GetAllAcademicians()
         {

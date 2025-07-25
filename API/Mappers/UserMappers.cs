@@ -45,7 +45,7 @@ namespace API.Mappers
                 BillingNumber = "",
                 FirmName = "",
                 TaxOfficeName = "",
-                Language = "tr",
+                Language = dto.Language,
                 CreDate = DateOnly.FromDateTime(DateTime.Now),
                 Deleted = false
             };

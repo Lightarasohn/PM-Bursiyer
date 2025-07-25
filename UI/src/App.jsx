@@ -11,7 +11,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="login" element={<LoginScreen />} />
-        <Route path="main" element={<MainLayout/>}>
+        <Route path="/" element={<MainLayout/>}>
           <Route path="bursiyer-listesi" element={<BursiyerListesi />} />
           <Route path="bursiyer-ekle" element={<BursiyerEkle />} />
           <Route path="scholar-info" element={<ScholarInfo />} />

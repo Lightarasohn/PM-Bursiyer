@@ -15,5 +15,6 @@ namespace API.Interfaces
         Task<TermsOfScholarsDocument> AddTermsOfScholarsDocumentAsync(TermsOfScholarsDocumentDTO termsOfScholarsDocumentsDto);
         Task<TermsOfScholarsDocument> UpdateTermsOfScholarsDocumentAsync(TermsOfScholarsDocumentDTO termsOfScholarsDocumentsDto, int scholarId, int termId, int documentTypeId);
         Task<TermsOfScholarsDocument> DeleteTermsOfScholarsDocumentAsync(int scholarId, int termId, int documentTypeId);
+        Task<List<TermsOfScholarsDocument>> AddRangeTermsOfScholarsDocumentAsync(List<TermsOfScholarsDocumentDTO> list);
     }
 }

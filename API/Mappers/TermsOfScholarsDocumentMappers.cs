@@ -18,8 +18,14 @@ namespace API.Mappers
                 DocumentTypeId = dto.DocumentTypeId,
                 RealUploadDate = dto.RealUploadDate,
                 ExpectedUploadDate = dto.ExpectedUploadDate,
-                ListType = dto.ListType!
+                ListType = dto.ListType!,
+                Deleted = false
             };
+        }
+
+        public static List<TermsOfScholarsDocument> ToModelList(this List<TermsOfScholarsDocumentDTO> dtoList)
+        {
+            return dtoList.Select(item => item.ToModel()).ToList();
         }
     }
 }
