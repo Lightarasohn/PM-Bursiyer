@@ -113,5 +113,41 @@ namespace API.Repositories
             await _context.SaveChangesAsync();
             return entity;
         }
+
+        public async Task<List<TermDocumentType>> AddTermDocumentTypeRangeAsync(List<TermDocumentTypeDTO> termDocumentTypeDtos)
+        {
+            _logger.LogInformation("AddTermDocumentTypeRangeAsync executing");
+
+            if (termDocumentTypeDtos == null || !termDocumentTypeDtos.Any())
+                throw new ArgumentException("TermDocumentType listesi boş olamaz.");
+
+            var termDocumentTypes = new List<TermDocumentType>();
+
+            foreach (var dto in termDocumentTypeDtos)
+            {
+                if (dto.TermId <= 0 || dto.DocumentTypeId <= 0)
+                    throw new ArgumentException($"TermId ve DocumentTypeId geçerli olmalıdır. TermId: {dto.TermId}, DocumentTypeId: {dto.DocumentTypeId}");
+
+                var termExists = await _context.Terms.AnyAsync(t => t.Id == dto.TermId && !t.Deleted);
+                if (!termExists)
+                    throw new Exception($"Term ID {dto.TermId} bulunamadı.");
+
+                var docTypeExists = await _context.DocumentTypes.AnyAsync(dt => dt.Id == dto.DocumentTypeId && !dt.Deleted);
+                if (!docTypeExists)
+                    throw new Exception($"DocumentType ID {dto.DocumentTypeId} bulunamadı.");
+
+                var alreadyExists = await _context.TermDocumentTypes
+                    .AnyAsync(tdt => tdt.TermId == dto.TermId && tdt.DocumentTypeId == dto.DocumentTypeId);
+                if (alreadyExists)
+                    throw new Exception($"Term ID {dto.TermId} ve DocumentType ID {dto.DocumentTypeId} ilişkisi zaten mevcut.");
+
+                termDocumentTypes.Add(dto.ToModel());
+            }
+
+            _context.TermDocumentTypes.AddRange(termDocumentTypes);
+            await _context.SaveChangesAsync();
+
+            return termDocumentTypes;
+        }
     }
 }

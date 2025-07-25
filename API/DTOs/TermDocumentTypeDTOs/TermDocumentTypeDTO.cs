@@ -8,7 +8,6 @@ namespace API.DTOs.TermDocumentTypeDTOs
     public class TermDocumentTypeDTO
     {
         public int TermId { get; set; }
-
         public int DocumentTypeId { get; set; }
         public string? ListType { get; set; } 
     }

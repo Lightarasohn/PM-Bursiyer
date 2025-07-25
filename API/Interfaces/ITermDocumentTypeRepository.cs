@@ -16,5 +16,6 @@ namespace API.Interfaces
         Task<TermDocumentType> AddTermDocumentTypeAsync(TermDocumentTypeDTO termDocumentTypeDto);
         Task<TermDocumentType> UpdateTermDocumentTypeAsync(TermDocumentTypeDTO termDocumentTypeDto, int termId, int documentTypeId);
         Task<TermDocumentType> DeleteTermDocumentTypeAsync(int termId, int documentTypeId);
+        Task<List<TermDocumentType>> AddTermDocumentTypeRangeAsync(List<TermDocumentTypeDTO> termDocumentTypeDto);
     }
 }
