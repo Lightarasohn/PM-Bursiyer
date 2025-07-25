@@ -11,8 +11,6 @@ public partial class TermDocumentType
 
     public string? ListType { get; set; }
 
-    public short? UploadFrequency { get; set; }
-
     public virtual DocumentType DocumentType { get; set; } = null!;
 
     public virtual Term Term { get; set; } = null!;

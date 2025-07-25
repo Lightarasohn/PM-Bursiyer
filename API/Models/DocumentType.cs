@@ -11,6 +11,8 @@ public partial class DocumentType
 
     public bool Deleted { get; set; }
 
+    public int? UploadFrequency { get; set; }
+
     public virtual ICollection<TermDocumentType> TermDocumentTypes { get; set; } = new List<TermDocumentType>();
 
     public virtual ICollection<TermsOfScholarsDocument> TermsOfScholarsDocuments { get; set; } = new List<TermsOfScholarsDocument>();
