@@ -151,7 +151,7 @@ namespace API.Services
 
             var allDocuments = entryDocumentsAdded.Concat(ongoingDocumentsAdded).Concat(exitDocumentsAdded).ToList();
 
-            return allDocuments;
+            return new();
         }
 
     }

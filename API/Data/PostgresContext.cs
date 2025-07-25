@@ -151,6 +151,7 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.ListType)
                 .HasColumnType("character varying")
                 .HasColumnName("LIST_TYPE");
+            entity.Property(e => e.UploadFrequency).HasColumnName("UPLOAD_FREQUENCY");
 
             entity.HasOne(d => d.DocumentType).WithMany(p => p.TermDocumentTypes)
                 .HasForeignKey(d => d.DocumentTypeId)
