@@ -97,6 +97,7 @@ builder.Services.AddScoped<ISystemConstantsRepository, SystemConstantsRepository
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IScholarAddService, ScholarAddService>();
 
 
 var app = builder.Build();

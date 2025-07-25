@@ -11,8 +11,6 @@ using API.DTOs.TermDTOs;
 using API.DTOs.TermsOfScholarDTOs;
 using API.Interfaces;
 using API.Models;
-using API.DTOs.TermsOfScholarsDocumentDTOs;
-using API.DTOs.TermsOfScholarsDocumentDTOs;
 using API.DTOs.TermDocumentTypeDTOs;
 
 namespace API.Services
@@ -24,16 +22,19 @@ namespace API.Services
         private readonly ITermsOfScholarRepository _termsOfScholarRepo;
         private readonly ITermDocumentTypeRepository _termDocumentTypeRepo;
         private readonly ITermsOfScholarsDocumentRepository _TermsOfScholarsDocumentRepo;
+        private readonly IDocumentTypeRepository _documentTypeRepo;
         public ScholarAddService(IScholarRepository scholarRepository, ITermRepository termRepository,
         ITermsOfScholarRepository termsOfScholarRepository,
         ITermDocumentTypeRepository termDocumentTypeRepository,
-        ITermsOfScholarsDocumentRepository TermsOfScholarsDocumentRepository)
+        ITermsOfScholarsDocumentRepository TermsOfScholarsDocumentRepository,
+        IDocumentTypeRepository documentTypeRepository)
         {
             _scholarRepo = scholarRepository;
             _termRepo = termRepository;
             _termsOfScholarRepo = termsOfScholarRepository;
             _termDocumentTypeRepo = termDocumentTypeRepository;
             _TermsOfScholarsDocumentRepo = TermsOfScholarsDocumentRepository;
+            _documentTypeRepo = documentTypeRepository;
         }
         public async Task<bool> AddScholarFull(ScholarAddDto scholarAddDto)
         {
@@ -41,9 +42,10 @@ namespace API.Services
             var addedTerm = await addTerm(scholarAddDto.TermName, scholarAddDto.TermStartDate, scholarAddDto.TermEndDate, scholarAddDto.TermResponsibleAcademician);
             var termsOfScholarDTO = await addTermOfScholar(addedScholar.Id, addedTerm.Id, null, null);
             var TermsOfDocument = await addTermDocument(addedTerm.Id, scholarAddDto.EntryDocuments, scholarAddDto.OngoingDocuments, scholarAddDto.ExitDocuments);
-            var termsofScholarDocuments = await addTermDocumentToScholar(addedScholar.Id, addedTerm, )
+            var termsofScholarDocuments = await addTermDocumentToScholar(addedScholar.Id, addedTerm, scholarAddDto.EntryDocuments, scholarAddDto.OngoingDocuments, scholarAddDto.ExitDocuments);
 
-            throw new NotImplementedException();
+
+            return true;
         }
         private async Task<Scholar> addScholar(string scholarName, string scholarEmail)
         {
@@ -90,7 +92,6 @@ namespace API.Services
                     TermId = termId,
                     DocumentTypeId = item,
                     ListType = "ENTRY",
-                    
                 }
             ).ToList();
 
@@ -121,7 +122,7 @@ namespace API.Services
             return allDocuments;
         }
         
-        private async Task<List<TermsOfScholarsDocument>> addTermDocumentToScholar(int scholarId, Term term, int frequency, List<int> entryDocuments,List<int> ongoingDocuments,List<int> exitDocuments)
+        private async Task<List<TermsOfScholarsDocument>> addTermDocumentToScholar(int scholarId, Term term, List<int> entryDocuments,List<int> ongoingDocuments,List<int> exitDocuments)
         {
             List<TermsOfScholarsDocumentDTO> entryDocumentTypeDtos = entryDocuments.Select(item =>
                 new TermsOfScholarsDocumentDTO
@@ -138,6 +139,9 @@ namespace API.Services
             foreach (var item in ongoingDocuments)
             {
                 var expectedUploadDate = term.StartDate;
+                var documentType = await _documentTypeRepo.GetDocumentTypeByIdAsync(item);
+                int frequency = documentType.UploadFrequency ?? 1;
+
                 while (expectedUploadDate <= term.EndDate)
                 {
                     ongoingDocumentTypeDtos.Add(new TermsOfScholarsDocumentDTO
