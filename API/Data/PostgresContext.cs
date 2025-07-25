@@ -143,7 +143,7 @@ public partial class PostgresContext : DbContext
 
         modelBuilder.Entity<TermDocumentType>(entity =>
         {
-            entity.HasKey(e => new { e.TermId, e.DocumentTypeId }).HasName("TERM_DOCUMENT_TYPE_pkey");
+            entity.HasKey(e => new { e.TermId, e.DocumentTypeId, e.ListType }).HasName("TERM_DOCUMENT_TYPE_pkey");
 
             entity.ToTable("TERM_DOCUMENT_TYPE");
 

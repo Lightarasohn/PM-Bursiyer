@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AutoComplete,
   Button,
   Card,
   Col,
@@ -12,20 +10,12 @@ import {
   Select,
   Typography,
   message,
-  Divider,
-  Space,
 } from "antd";
-import { UserOutlined, CalendarOutlined, FileTextOutlined, TeamOutlined } from '@ant-design/icons';
 import "./BursiyerEkle.css";
 import { useEffect, useState } from "react";
 import GetAllAcademicianAPI from "../API/GetAllAcademicianAPI";
-import AddScholarAPI from "../API/AddScholarAPI";
-import addTermAPI from "../API/AddTermAPI";
-import addTermOfScholarAPI from "../API/addTermOfScholarAPI";
 import GetAllRequiredDocumentsAPI from "../API/GetAllRequiredDocumentsAPI";
 import GetAllDocumentsAPI from "../API/GetAllDocumentsAPI";
-import AddTermDocumentTypesAPI from "../API/AddTermDocumentTypesAPI";
-import GetSystemConstantsAPI from "../API/GetSystemConstants";
 import AddTermOfScholarDocumentsAPI from "../API/AddTermOfScholarDocumentsAPI";
 
 const { Title, Text } = Typography;
@@ -118,6 +108,13 @@ const BursiyerEkle = () => {
     });
   };
 
+  const formMessage = (text) => {
+    messageApi.open({
+      type: "success",
+      content: text
+    })
+  }
+
   const handleChange = (val) => {
     console.log(val);
   };
@@ -143,10 +140,28 @@ const BursiyerEkle = () => {
     fetchAcademician();
   }, []);
 
-  const handleFinish = (values) => {
-    values.endDate = values.endDate.format("YYYY-MM-DD")
-    values.startDate = values.startDate.format("YYYY-MM-DD")
+  const handleFinish = async (values) => {
+    setIsSubmitting(true)
+    values.termEndDate = values.termEndDate.format("YYYY-MM-DD")
+    values.termStartDate = values.termStartDate.format("YYYY-MM-DD")
     console.log(values)
+    const requestValues = {
+      scholarEmail: values.scholarEmail,
+      scholarName: values.scholarName,
+      termName: values.termName,
+      termEndDate: values.termEndDate,
+      termStartDate: values.termEndDate,
+      termResponsibleAcademician: values.termResponsibleAcademician,
+      entryDocuments: values.entryDocuments,
+      ongoingDocuments: values.ongoingDocuments,
+      exitDocuments: values.exitDocuments
+    }
+    const response = await AddTermOfScholarDocumentsAPI(requestValues);
+    if(!response){
+      error();
+    }
+    formMessage("Scholar Added Successfully");
+    setIsSubmitting(false)
   };
 
   return (
@@ -210,7 +225,7 @@ const BursiyerEkle = () => {
                       Full Name
                     </span>
                   }
-                  name="nameSurname"
+                  name="scholarName"
                   rules={[
                     { required: true, message: 'Scholar name is required' },
                     { min: 2, message: 'Name must be at least 2 characters' }
@@ -235,7 +250,7 @@ const BursiyerEkle = () => {
                       Email Address
                     </span>
                   }
-                  name="email"
+                  name="scholarEmail"
                   rules={[
                     { required: true, message: 'Email is required' },
                     { type: 'email', message: 'Please enter a valid email address' }
@@ -283,7 +298,7 @@ const BursiyerEkle = () => {
                       Term Name
                     </span>
                   }
-                  name="name"
+                  name="termName"
                   rules={[{ required: true, message: 'Term name is required' }]}
                   style={{ marginBottom: '20px' }}
                 >
@@ -307,7 +322,7 @@ const BursiyerEkle = () => {
                           Start Date
                         </span>
                       }
-                      name="startDate"
+                      name="termStartDate"
                       rules={[
                         {
                           required: true,
@@ -330,7 +345,7 @@ const BursiyerEkle = () => {
                           End Date
                         </span>
                       }
-                      name="endDate"
+                      name="termEndDate"
                       rules={[
                         {
                           required: true,
@@ -363,7 +378,7 @@ const BursiyerEkle = () => {
                       Responsible Academician
                     </span>
                   }
-                  name="responsibleAcademician"
+                  name="termResponsibleAcademician"
                   rules={[
                     {
                       required: true,

@@ -1,6 +1,6 @@
 const AddTermOfScholarDocumentsAPI = async (body) => {
 
-    const url = `http://localhost:5155/api/term-scholar-document`;
+    const url = `http://localhost:5155/api/scholar-add-full`;
     var requestOptions = {
         method: "POST",
         headers: {

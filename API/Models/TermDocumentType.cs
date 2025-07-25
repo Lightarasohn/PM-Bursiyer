@@ -9,7 +9,7 @@ public partial class TermDocumentType
 
     public int DocumentTypeId { get; set; }
 
-    public string? ListType { get; set; }
+    public string ListType { get; set; } = null!;
 
     public virtual DocumentType DocumentType { get; set; } = null!;
 

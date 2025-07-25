@@ -137,14 +137,14 @@ namespace API.Repositories
                     throw new Exception($"DocumentType ID {dto.DocumentTypeId} bulunamadı.");
 
                 var alreadyExists = await _context.TermDocumentTypes
-                    .AnyAsync(tdt => tdt.TermId == dto.TermId && tdt.DocumentTypeId == dto.DocumentTypeId);
+                    .AnyAsync(tdt => tdt.TermId == dto.TermId && tdt.DocumentTypeId == dto.DocumentTypeId && tdt.ListType == dto.ListType);
                 if (alreadyExists)
                     throw new Exception($"Term ID {dto.TermId} ve DocumentType ID {dto.DocumentTypeId} ilişkisi zaten mevcut.");
 
                 termDocumentTypes.Add(dto.ToModel());
             }
 
-            _context.TermDocumentTypes.AddRange(termDocumentTypes);
+            await _context.TermDocumentTypes.AddRangeAsync(termDocumentTypes);
             await _context.SaveChangesAsync();
 
             return termDocumentTypes;
