@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.DTOs.ScholarDTOs;
 using API.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -19,6 +20,7 @@ namespace API.Controllers
             _scholarRepo = scholarRepo;
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllScholars()
         {
