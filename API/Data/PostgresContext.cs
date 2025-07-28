@@ -22,6 +22,8 @@ public partial class PostgresContext : DbContext
 
     public virtual DbSet<Scholar> Scholars { get; set; }
 
+    public virtual DbSet<Sozluk> Sozluks { get; set; }
+
     public virtual DbSet<SystemConstant> SystemConstants { get; set; }
 
     public virtual DbSet<Term> Terms { get; set; }
@@ -102,6 +104,27 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.NameSurname)
                 .HasMaxLength(100)
                 .HasColumnName("NAME_SURNAME");
+        });
+
+        modelBuilder.Entity<Sozluk>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("SOZLUK_pkey");
+
+            entity.ToTable("SOZLUK");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Dil)
+                .HasMaxLength(50)
+                .HasColumnName("DIL");
+            entity.Property(e => e.KullanilanSayfa)
+                .HasMaxLength(100)
+                .HasColumnName("KULLANILAN_SAYFA");
+            entity.Property(e => e.SozlukAnahtar)
+                .HasMaxLength(100)
+                .HasColumnName("SOZLUK_ANAHTAR");
+            entity.Property(e => e.SozlukDeger)
+                .HasMaxLength(100)
+                .HasColumnName("SOZLUK_DEGER");
         });
 
         modelBuilder.Entity<SystemConstant>(entity =>
