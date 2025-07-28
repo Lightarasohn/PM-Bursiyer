@@ -3,11 +3,11 @@ import { Card } from "antd";
 import { useLocalization } from '../../Localization/LocalizationContext';
 
 const LoginScreen = () => {
-    const { t, setLanguage, language } = useLocalization();
+    const { currentLanguage } = useLocalization();
     return(
         <>
             <Card>
-                 return <h1>{t("welcomeMessage")}</h1>;
+                 return <h1>{currentLanguage("welcomeMessage")}</h1>;
             </Card>
         </>
     )

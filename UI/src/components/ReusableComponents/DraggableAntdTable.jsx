@@ -29,8 +29,11 @@ import ExcelJS from "exceljs";
 // Drag context for column styling
 const DragIndexContext = createContext({ active: -1, over: -1 });
 
+
 // Drag active style function
 const dragActiveStyle = (dragState, id) => {
+ 
+
   const { active, over, direction } = dragState;
   let style = {};
   if (active && active === id) {
@@ -46,6 +49,7 @@ const dragActiveStyle = (dragState, id) => {
 
 // Table header cell component for draggable columns
 const TableHeaderCell = (props) => {
+  
   const dragState = useContext(DragIndexContext);
   const { attributes, listeners, setNodeRef, isDragging } = useSortable({
     id: props.id,
@@ -135,6 +139,7 @@ const Row = ({ children, ...props }) => {
  * @param {boolean} [props.showExportButton=false] - Show Excel export button
  * @param {string} [props.exportFileName="export"] - Excel file name (without extension)
  * @param {Function} [props.onExport] - Custom export callback
+ * @param {Function} props.t - Translation function
  *
  * // Aksiyon prop'ları
  * @param {boolean} [props.showEdit=false] - Show edit button column
@@ -165,7 +170,8 @@ const DraggableAntdTable = ({
   showExportButton = false,
   exportFileName = "export",
   onExport,
-  // Yeni ayrı aksiyon prop'ları
+  localizeThis,
+  
   showEdit = false,
   showDelete = false,
   editConfig = {},
@@ -177,11 +183,11 @@ const DraggableAntdTable = ({
   const [searchedColumn, setSearchedColumn] = useState("");
   const [exportLoading, setExportLoading] = useState(false);
   const searchInput = useRef(null);
-
+  // const { setLanguage, language, t } = useLocalization();
   // Edit konfigürasyonu için default değerler
   const defaultEditConfig = {
-    title: "Düzenle",
-    buttonText: "Düzenle",
+    title: localizeThis("editTitle"),
+    buttonText: localizeThis("editButtonText"),
     buttonType: "default",
     buttonSize: "small",
     buttonDanger: false,
@@ -193,16 +199,16 @@ const DraggableAntdTable = ({
 
   // Delete konfigürasyonu için default değerler
   const defaultDeleteConfig = {
-    title: "Sil",
-    buttonText: "Sil",
+    title: localizeThis("deleteTitle"),
+    buttonText: localizeThis("deleteButtonText"),
     buttonType: "default",
     buttonSize: "small",
     buttonDanger: true,
     icon: <DeleteOutlined />,
-    confirmTitle: "Emin misiniz?",
-    confirmDescription: "Bu kaydı silmek istediğinizden emin misiniz?",
-    confirmOkText: "Evet",
-    confirmCancelText: "Hayır",
+    confirmTitle: localizeThis("deleteConfirmTitle"),
+    confirmDescription: localizeThis("deleteConfirmDescription"),
+    confirmOkText: localizeThis("deleteConfirmOkText"),
+    confirmCancelText: localizeThis("deleteConfirmCancelText"),
     width: 80,
     fixed: false,
     ...deleteConfig,
@@ -328,7 +334,7 @@ const DraggableAntdTable = ({
 
       // Yeni workbook oluştur
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Data');
+      const worksheet = workbook.addWorksheet(localizeThis("excelWorksheetName"));
 
       // Header'ları ekle
       const headers = exportColumns.map(col => col.title || col.dataIndex);
@@ -412,7 +418,7 @@ const DraggableAntdTable = ({
 
     } catch (error) {
       console.error("Excel export error:", error);
-      alert("Excel dosyası oluşturulurken bir hata oluştu: " + error.message);
+      alert(localizeThis("excelExportError") + ": " + error.message);
     } finally {
       setExportLoading(false);
     }
@@ -429,7 +435,7 @@ const DraggableAntdTable = ({
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
         <Input
           ref={searchInput}
-          placeholder={`Search ${dataIndex}`}
+          placeholder={localizeThis("searchPlaceholder") + " " + dataIndex}
           value={selectedKeys[0]}
           onChange={(e) =>
             setSelectedKeys(e.target.value ? [e.target.value] : [])
@@ -445,14 +451,14 @@ const DraggableAntdTable = ({
             size="small"
             style={{ width: 90 }}
           >
-            Search
+            {localizeThis("searchButtonText")}
           </Button>
           <Button
             onClick={() => {handleReset(clearFilters); handleSearch(selectedKeys, confirm, dataIndex)}}
             size="small"
             style={{ width: 90 }}
           >
-            Reset
+            {localizeThis("resetButtonText")}
           </Button>
         </Space>
       </div>
@@ -592,7 +598,7 @@ const DraggableAntdTable = ({
             loading={exportLoading || loading}
             disabled={!dataSource || dataSource.length === 0}
           >
-            Excel'e Aktar
+            {localizeThis("exportToExcelButtonText")}
           </Button>
         </div>
       )}

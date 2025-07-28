@@ -5,29 +5,29 @@ import DraggableAntdTable from "../ReusableComponents/DraggableAntdTable";
 import { Button, Card } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import BursiyerSilmeAPI from "../API/BursiyerSilmeAPI";
+import { useLocalization } from "../../Localization/LocalizationContext";
 
 const BursiyerListesi = () => {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const {  localizeThis } = useLocalization();
   const baseColumns = [
-    {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-    },
-    {
-      title: "Name Surname",
-      dataIndex: "nameSurname",
-      key: "nameSurname",
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-  ];
-
+  {
+    title: localizeThis("idColumnTitle"),
+    dataIndex: "id",
+    key: "id",
+  },
+  {
+    title: localizeThis("nameSurnameColumnTitle"),
+    dataIndex: "nameSurname",
+    key: "nameSurname",
+  },
+  {
+    title: localizeThis("emailColumnTitle"),
+    dataIndex: "email",
+    key: "email",
+  },
+];
   const fetchData = async () => {
       const response = await BursiyerListesiAPI();
       setList(response);
@@ -35,8 +35,10 @@ const BursiyerListesi = () => {
     };
 
   useEffect(() => {
+    
     fetchData();
   }, []);
+  
 
   const handleEdit = (e) => {
     const id = e.id;
@@ -61,6 +63,7 @@ const BursiyerListesi = () => {
         rowKey="id"
         sort={true}
         filter={true}
+        localizeThis = {localizeThis}
         columnDraggable={true}
         rowDraggable={false}
         showExportButton={true}

@@ -1,5 +1,6 @@
 const AddScholarAPI = async (body) => {
-    const url = `http://localhost:5155/api/scholar`;
+    
+    const url = `${base}/api/scholar`;
     var requestOptions = {
         method: "POST",
         headers: {

@@ -7,7 +7,7 @@ import { useLocalization } from "../../Localization/LocalizationContext";
 const { Header, Content, Footer, Sider } = Layout;
 
 const MainLayout = () => {
-  const { setLanguage, language, t } = useLocalization();
+  const { setLanguage, localizeThis } = useLocalization();
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer },
@@ -77,10 +77,9 @@ const MainLayout = () => {
             overflow: "auto",
           }}
         >
-          <Header
+          <Header theme ="dark"
             style={{
               padding: "0 20px",
-              background: "black",
               position: "fixed",
               width: `calc(100% - ${siderWidth}px)`,
               left: siderWidth,
@@ -129,7 +128,7 @@ const MainLayout = () => {
           >
             <Breadcrumb style={{ marginBottom: 16 }} items={[{ title: "User" }, { title: "Bill" }]} />
             <div style={{ minHeight: "100%" }}>
-              {matchRoot ? <h1>Main Layout</h1> : <Outlet />}
+              {matchRoot ? <h1>{localizeThis("welcomeMessage")}</h1> : <Outlet />}
             </div>
           </Content>
 

@@ -15,15 +15,23 @@ export const LocalizationProvider = ({ children }) => {
 
     useEffect(() => {
   localStorage.setItem("lang", language);
-  fetch(`/api/sozluk/${language}`)
+
+  fetch(`http://localhost:5155/api/sozluk/language/${language}`)
     .then((res) => res.json())
-    .then((data) => setDictionary(data));
+    .then((data) => {
+      // Veriyi dictionary objesine dönüştür
+      const dict = {};
+      data.forEach(item => {
+        dict[item.sozlukAnahtar] = item.sozlukDeger;
+      });
+      setDictionary(dict);
+    });
 }, [language]);
 
-  const t = (key) => dictionary[key] || key;
+  const localizeThis = (key) => dictionary[key] || key;
 
   return (
-    <LocalizationContext.Provider value={{ t, language, setLanguage }}>
+    <LocalizationContext.Provider value={{ localizeThis, language, setLanguage }}>
       {children}
     </LocalizationContext.Provider>
   );
