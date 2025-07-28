@@ -10,6 +10,7 @@ namespace API.Interfaces
     public interface ISozlukRepository
     {
         Task<IEnumerable<Sozluk>> GetAllDictionaryValues();
+        Task<List<Sozluk>> GetAllDictionaryValuesByLanguage(string language);
         Task<List<Sozluk>> GetAllDictionaryValuesByQuery(SozlukQueryDTO sozlukQueryDTO);
         Task<Sozluk> GetValueByIdAsync(int id);
         Task<Sozluk> AddValueAsync(SozlukDTO sozlukDTO);

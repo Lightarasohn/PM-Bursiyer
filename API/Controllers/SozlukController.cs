@@ -118,5 +118,20 @@ namespace API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet("language/{language}")]
+        public async Task<IActionResult> GetByLanguage([FromRoute] string language)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            try
+            {
+                var sozlukler = await _sozlukRepository.GetAllDictionaryValuesByLanguage(language);
+                return Ok(sozlukler);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

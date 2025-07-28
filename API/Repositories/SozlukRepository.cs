@@ -47,6 +47,14 @@ namespace API.Repositories
             return await _context.Sozluks.ToListAsync();
         }
 
+        public Task<List<Sozluk>> GetAllDictionaryValuesByLanguage(string language)
+        {
+            _logger.LogInformation("GetAllDictionaryValuesByLanguage executing");
+            return _context.Sozluks
+                .Where(s => s.Dil != null && s.Dil.Equals(language, StringComparison.OrdinalIgnoreCase))
+                .ToListAsync();
+        }
+
         public Task<List<Sozluk>> GetAllDictionaryValuesByQuery(SozlukQueryDTO sozlukQueryDTO)
         {
             _logger.LogInformation("GetAllDictionaryValuesByQuery executing");
