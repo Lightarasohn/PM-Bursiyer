@@ -21,6 +21,7 @@ import {
 } from "@ant-design/icons";
 import { useLocalization } from "../../Localization/LocalizationContext";
 import "./LoginScreen.css";
+import LoginAPI from "../API/LoginAPI";
 
 const { Title, Text, Link } = Typography;
 
@@ -38,9 +39,19 @@ const LoginScreen = () => {
     setLoginLoading(true);
     try {
       console.log("Login values:", values);
-      // Burada login API çağrısı yapılacak
-      messageApi.success("Login successful!");
-      // Navigate to dashboard or main page
+      const ValuesToSend = {
+        email: values.email,
+        password: values.password,
+      }
+      const response = await LoginAPI(ValuesToSend);
+      if(response){
+        messageApi.success("Login successful!");
+        localStorage.setItem("userToken", response.token);
+        localStorage.setItem("lang", response.language);
+        window.location.href = "/"; 
+      } else {
+        messageApi.error("Login failed. Please check your credentials.");
+      }
     } catch (error) {
       messageApi.error("Login failed. Please check your credentials.");
     } finally {

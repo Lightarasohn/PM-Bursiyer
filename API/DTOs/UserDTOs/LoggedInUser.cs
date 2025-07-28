@@ -28,5 +28,6 @@ namespace API.DTOs.UserDTOs
         public string? FirmName { get; set; }
 
         public string? TaxOfficeName { get; set; }
+        public string? Language { get; set; }
     }
 }

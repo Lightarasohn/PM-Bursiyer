@@ -24,7 +24,8 @@ namespace API.Mappers
                 BillingNumber = user.BillingNumber,
                 FirmName = user.FirmName,
                 TaxOfficeName = user.TaxOfficeName,
-                Token = token
+                Token = token,
+                Language = user.Language
             };
         }
 
