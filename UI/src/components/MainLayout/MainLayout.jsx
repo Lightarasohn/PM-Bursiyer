@@ -2,10 +2,12 @@ import { Breadcrumb, Layout, Menu, theme } from "antd";
 import { Link, Outlet, useMatch } from "react-router-dom";
 import { useState } from "react";
 import { UserOutlined } from "@ant-design/icons";
+import { useLocalization } from "../../Localization/LocalizationContext";
 
 const { Header, Content, Footer, Sider } = Layout;
 
 const MainLayout = () => {
+  const { setLanguage, language, t } = useLocalization();
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer },
@@ -77,15 +79,46 @@ const MainLayout = () => {
         >
           <Header
             style={{
-              padding: 0,
-              background: colorBgContainer,
+              padding: "0 20px",
+              background: "black",
               position: "fixed",
               width: `calc(100% - ${siderWidth}px)`,
               left: siderWidth,
               top: 0,
               zIndex: 1000,
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
             }}
-          />
+          >
+            {/* Bayrak butonları */}
+            <div>
+              <button
+                onClick={() => setLanguage("tr")}
+                style={{
+                  marginRight: 10,
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontSize: "20px",
+                }}
+              >
+                TR
+              </button>
+              <button
+                onClick={() => setLanguage("en")}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontSize: "20px",
+                }}
+              >
+                EN
+              </button>
+            </div>
+          </Header>
+          
           <Content
             style={{
               margin: "64px 16px 70px",
