@@ -1,0 +1,101 @@
+/* LoginScreen.css */
+
+/* Tablet view animasyonları */
+.ant-tabs .ant-tabs-tab {
+  transition: all 0.3s ease;
+}
+
+.ant-tabs .ant-tabs-tab:hover {
+  transform: translateY(-2px);
+}
+
+/* Form input'ları için hover efektleri */
+.ant-input:hover,
+.ant-input-password:hover {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
+}
+
+.ant-input:focus,
+.ant-input-password:focus,
+.ant-input-focused {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* Button hover efektleri */
+.ant-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5) !important;
+}
+
+/* Card animasyonları */
+.ant-card {
+  transition: all 0.3s ease;
+}
+
+/* Responsive düzenlemeler */
+@media (max-width: 768px) {
+  .ant-card-body {
+    padding: 20px !important;
+  }
+  
+  .ant-tabs-tab {
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .ant-card-body {
+    padding: 16px !important;
+  }
+  
+  .ant-input,
+  .ant-input-password {
+    padding: 10px !important;
+  }
+  
+  .ant-btn {
+    height: 44px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* Loading animasyonu */
+.ant-btn-loading::before {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Form validation hataları için custom stiller */
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input-password {
+  border-color: #ff4d4f !important;
+}
+
+.ant-form-item-has-error .ant-input:hover,
+.ant-form-item-has-error .ant-input-password:hover {
+  border-color: #ff7875 !important;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+background: #a8a8a8;
+}
