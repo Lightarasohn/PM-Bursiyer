@@ -51,7 +51,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("GetAllDictionaryValuesByLanguage executing");
             return _context.Sozluks
-                .Where(s => s.Dil != null && s.Dil.Equals(language, StringComparison.OrdinalIgnoreCase))
+                .Where(s => s.Dil != null && s.Dil.ToLower().Equals(language.ToLower()))
                 .ToListAsync();
         }
 
