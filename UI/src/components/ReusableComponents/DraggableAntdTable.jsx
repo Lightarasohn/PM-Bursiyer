@@ -1,4 +1,4 @@
-import React, { useState, useRef, createContext, useContext } from "react";
+import React, { useState, useRef, createContext, useContext, useEffect } from "react";
 import { Table, Input, Button, Space, Popconfirm } from "antd";
 import {
   SearchOutlined,
@@ -29,11 +29,8 @@ import ExcelJS from "exceljs";
 // Drag context for column styling
 const DragIndexContext = createContext({ active: -1, over: -1 });
 
-
 // Drag active style function
 const dragActiveStyle = (dragState, id) => {
- 
-
   const { active, over, direction } = dragState;
   let style = {};
   if (active && active === id) {
@@ -49,7 +46,6 @@ const dragActiveStyle = (dragState, id) => {
 
 // Table header cell component for draggable columns
 const TableHeaderCell = (props) => {
-  
   const dragState = useContext(DragIndexContext);
   const { attributes, listeners, setNodeRef, isDragging } = useSortable({
     id: props.id,
@@ -171,7 +167,7 @@ const DraggableAntdTable = ({
   exportFileName = "export",
   onExport,
   localizeThis,
-  
+
   showEdit = false,
   showDelete = false,
   editConfig = {},
@@ -312,15 +308,16 @@ const DraggableAntdTable = ({
 
     return columnsWithKeys;
   };
+  
 
-  const [tableColumns, setTableColumns] = useState(prepareColumns);
+  const [tableColumns, setTableColumns] = useState(() => prepareColumns());
   const [dragIndex, setDragIndex] = useState({ active: -1, over: -1 });
 
   // ExcelJS ile Excel export function
   const exportToExcel = async () => {
     try {
       setExportLoading(true);
-      
+
       // Custom export callback varsa onu kullan
       if (onExport) {
         await onExport(dataSource, tableColumns);
@@ -334,19 +331,21 @@ const DraggableAntdTable = ({
 
       // Yeni workbook oluştur
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet(localizeThis("excelWorksheetName"));
+      const worksheet = workbook.addWorksheet(
+        localizeThis("excelWorksheetName")
+      );
 
       // Header'ları ekle
-      const headers = exportColumns.map(col => col.title || col.dataIndex);
+      const headers = exportColumns.map((col) => col.title || col.dataIndex);
       worksheet.addRow(headers);
 
       // Header stilini ayarla
       const headerRow = worksheet.getRow(1);
       headerRow.font = { bold: true };
       headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFE6E6FA' }
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE6E6FA" },
       };
 
       // Veriyi formatla ve ekle
@@ -354,13 +353,16 @@ const DraggableAntdTable = ({
         const formattedRow = [];
         exportColumns.forEach((col) => {
           const value = row[col.dataIndex];
-          
+
           // Render fonksiyonu varsa ve basit string döndürüyorsa onu kullan
           if (col.render && typeof col.render === "function") {
             try {
               const rendered = col.render(value, row);
               // Eğer render edilen değer string veya number ise onu kullan
-              if (typeof rendered === "string" || typeof rendered === "number") {
+              if (
+                typeof rendered === "string" ||
+                typeof rendered === "number"
+              ) {
                 formattedRow.push(rendered);
               } else {
                 formattedRow.push(value || "");
@@ -380,7 +382,7 @@ const DraggableAntdTable = ({
         const column = worksheet.getColumn(index + 1);
         const maxLength = Math.max(
           col.title?.length || 0,
-          ...dataSource.map(row => {
+          ...dataSource.map((row) => {
             const value = row[col.dataIndex];
             return value ? value.toString().length : 0;
           })
@@ -392,30 +394,29 @@ const DraggableAntdTable = ({
       worksheet.eachRow((row) => {
         row.eachCell((cell) => {
           cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
           };
         });
       });
 
       // Dosyayı buffer olarak oluştur ve indir
       const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      
+
       // Download link oluştur
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `${exportFileName}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-
     } catch (error) {
       console.error("Excel export error:", error);
       alert(localizeThis("excelExportError") + ": " + error.message);
@@ -454,7 +455,10 @@ const DraggableAntdTable = ({
             {localizeThis("searchButtonText")}
           </Button>
           <Button
-            onClick={() => {handleReset(clearFilters); handleSearch(selectedKeys, confirm, dataIndex)}}
+            onClick={() => {
+              handleReset(clearFilters);
+              handleSearch(selectedKeys, confirm, dataIndex);
+            }}
             size="small"
             style={{ width: 90 }}
           >
@@ -503,6 +507,10 @@ const DraggableAntdTable = ({
     clearFilters();
     setSearchText("");
   };
+
+  useEffect(() => {
+      setTableColumns(prepareColumns());
+    }, [columns,localizeThis]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
