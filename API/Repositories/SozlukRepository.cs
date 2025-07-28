@@ -47,6 +47,34 @@ namespace API.Repositories
             return await _context.Sozluks.ToListAsync();
         }
 
+        public Task<List<Sozluk>> GetAllDictionaryValuesByQuery(SozlukQueryDTO sozlukQueryDTO)
+        {
+            _logger.LogInformation("GetAllDictionaryValuesByQuery executing");
+            var query = _context.Sozluks.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(sozlukQueryDTO.SozlukAnahtar))
+            {
+                query = query.Where(s => s.SozlukAnahtar != null && s.SozlukAnahtar.Contains(sozlukQueryDTO.SozlukAnahtar));
+            }
+
+            if (!string.IsNullOrWhiteSpace(sozlukQueryDTO.SozlukDeger))
+            {
+                query = query.Where(s => s.SozlukDeger != null && s.SozlukDeger.Contains(sozlukQueryDTO.SozlukDeger));
+            }
+
+            if (!string.IsNullOrWhiteSpace(sozlukQueryDTO.KullanilanSayfa))
+            {
+                query = query.Where(s => s.KullanilanSayfa != null && s.KullanilanSayfa.Contains(sozlukQueryDTO.KullanilanSayfa));
+            }
+
+            if (!string.IsNullOrWhiteSpace(sozlukQueryDTO.Dil))
+            {
+                query = query.Where(s => s.Dil != null && s.Dil.Contains(sozlukQueryDTO.Dil));
+            }
+
+            return query.ToListAsync();
+        }
+
         public async Task<Sozluk> GetValueByIdAsync(int id)
         {
             _logger.LogInformation("GetValueByIdAsync executing");

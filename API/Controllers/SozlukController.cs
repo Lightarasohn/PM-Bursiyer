@@ -103,5 +103,20 @@ namespace API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet("query")]
+        public async Task<IActionResult> GetByQuery([FromBody] SozlukQueryDTO sozlukQueryDTO)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            try
+            {
+                var sozlukler = await _sozlukRepository.GetAllDictionaryValuesByQuery(sozlukQueryDTO);
+                return Ok(sozlukler);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
