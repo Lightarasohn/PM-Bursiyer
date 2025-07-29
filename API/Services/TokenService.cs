@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using API.Interfaces;
@@ -43,8 +44,25 @@ namespace API.Services
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
+            var jwtToken = tokenHandler.WriteToken(token);
+            var encryptedToken = EncryptToken(jwtToken);
 
-            return tokenHandler.WriteToken(token);
+            return encryptedToken;
+        }
+
+        public string EncryptToken(string jwtToken)
+        {
+            var key = Encoding.UTF8.GetBytes(_configuration["JWT:ENCRYPTIONKEY"] ?? throw new Exception("Encryption key not found"));
+            using var aes = Aes.Create();
+            aes.Key = key;
+            aes.GenerateIV();
+            using var encryptor = aes.CreateEncryptor();
+            using var ms = new MemoryStream();
+            ms.Write(aes.IV, 0, aes.IV.Length); // IV başa yazılır
+            using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+            using var writer = new StreamWriter(cs);
+            writer.Write(jwtToken);
+            return Convert.ToBase64String(ms.ToArray());
         }
     }
 }
