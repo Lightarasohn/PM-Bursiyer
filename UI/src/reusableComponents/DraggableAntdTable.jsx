@@ -157,7 +157,6 @@ const DraggableAntdTable = ({
   pagination = { pageSize: 10 },
   size = "middle",
   scroll,
-  bordered = false,
   showHeader = true,
   onRow,
   onColumnOrderChange,

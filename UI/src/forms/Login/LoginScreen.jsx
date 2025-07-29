@@ -19,11 +19,10 @@ import {
   EyeInvisibleOutlined,
   EyeTwoTone,
 } from "@ant-design/icons";
-import { useLocalization } from "../../Localization/LocalizationContext";
-import "./LoginScreen.css";
-import LoginAPI from "../API/LoginAPI";
-import RegisterAPI from "../API/RegisterAPI";
-import { decryptToken } from "../../CryptoToken/AES-CBC";
+import { useLocalization } from "../../tools/localization/LocalizationContext";
+import "../../resources/css/LoginScreen.css";
+import LoginAPI from "../../services/LoginAPI";
+import RegisterAPI from "../../services/RegisterAPI";
  
 const { Title, Text, Link } = Typography;
  
@@ -40,7 +39,6 @@ const LoginScreen = () => {
   const handleLogin = async (values) => {
     setLoginLoading(true);
     try {
-      console.log("Login values:", values);
       const ValuesToSend = {
         email: values.email,
         password: values.password,
@@ -51,14 +49,11 @@ const LoginScreen = () => {
       
       if(response){
         const encryptedToken = response.token;
-        const decryptedToken = decryptToken(encryptedToken);
         messageApi.success("Login successful!");
         localStorage.setItem("userToken", encryptedToken);
-        console.log("Kullanıcı Dili",response.language)
         localStorage.setItem("lang", response.language);
-        console.log(encryptedToken);
-        console.log(decryptedToken);
-        // window.location.href = "/";
+        
+        window.location.href = "/";
       } else {
         messageApi.error("Login failed. Please check your credentials.");
       }
@@ -83,6 +78,7 @@ const LoginScreen = () => {
         messageApi.success("Register successfully!")
         setActiveTab("login")
       }
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
       messageApi.error("Registration failed. Please try again.");
     } finally {

@@ -28,10 +28,9 @@ import {
   PlusOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons';
-import DraggableAntdTable from '../ReusableComponents/DraggableAntdTable';
+import DraggableAntdTable from '../../reusableComponents/DraggableAntdTable';
 
 const { Title, Text } = Typography;
-const { useBreakpoint } = Grid;
 
 const ScholarInfo = () => {
   // State definitions
@@ -45,7 +44,6 @@ const ScholarInfo = () => {
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const [activeTabKey, setActiveTabKey] = useState("1");
 
-  const screens = useBreakpoint();
 
   // Utility functions
   const formatDate = (dateString) => {

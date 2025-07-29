@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import "./BursiyerListesi.css";
-import BursiyerListesiAPI from "../API/BursiyerListesiAPI";
-import DraggableAntdTable from "../ReusableComponents/DraggableAntdTable";
+import "../../resources/css/ScholarList.css";
+import BursiyerListesiAPI from "../../services/BursiyerListesiAPI";
+import DraggableAntdTable from "../../reusableComponents/DraggableAntdTable";
 import { Button, Card } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import BursiyerSilmeAPI from "../API/BursiyerSilmeAPI";
-import { useLocalization } from "../../Localization/LocalizationContext";
+import BursiyerSilmeAPI from "../../services/BursiyerSilmeAPI";
+import { useLocalization } from "../../tools/localization/LocalizationContext";
 
 const BursiyerListesi = () => {
   const [list, setList] = useState([]);

@@ -10,17 +10,20 @@ import {
   Select,
   Typography,
   message,
+  Breadcrumb,
 } from "antd";
-import "./BursiyerEkle.css";
+import "../../resources/css/AddScholar.css";
 import { useEffect, useState } from "react";
-import GetAllAcademicianAPI from "../API/GetAllAcademicianAPI";
-import GetAllRequiredDocumentsAPI from "../API/GetAllRequiredDocumentsAPI";
-import GetAllDocumentsAPI from "../API/GetAllDocumentsAPI";
-import AddTermOfScholarDocumentsAPI from "../API/AddTermOfScholarDocumentsAPI";
+import GetAllAcademicianAPI from "../../services/GetAllAcademicianAPI";
+import GetAllRequiredDocumentsAPI from "../../services/GetAllRequiredDocumentsAPI";
+import GetAllDocumentsAPI from "../../services/GetAllDocumentsAPI";
+import AddTermOfScholarDocumentsAPI from "../../services/AddTermOfScholarDocumentsAPI";
+import { useLocalization } from "../../tools/localization/LocalizationContext"
 
 const { Title, Text } = Typography;
 
 const BursiyerEkle = () => {
+  const {  localizeThis } = useLocalization();
   const [messageApi, contextHolder] = message.useMessage();
   const [academicianOptions, setAcademicianOptions] = useState([]);
   const [isOpenModal, setIsOpenModel] = useState(false);
@@ -166,6 +169,14 @@ const BursiyerEkle = () => {
 
   return (
     <>
+<Breadcrumb
+  style={{ marginBottom: 16 }}
+  items={[
+    { title: localizeThis("lblMainPage") },
+    { title: localizeThis("lblMainPage") }
+  ]}
+/>
+
   <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
     {contextHolder}
     <Card

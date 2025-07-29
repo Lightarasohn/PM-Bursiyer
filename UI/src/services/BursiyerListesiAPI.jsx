@@ -1,4 +1,4 @@
-import { decryptToken } from "../../CryptoToken/AES-CBC";
+import { decryptToken } from "../tools/cryptoToken/AES-CBC.js";
 
 const BursiyerListesiAPI = async () => {
     const url = "http://localhost:5155/api/scholar";
