@@ -17,11 +17,6 @@ const BursiyerListesi = () => {
   const getColumns = () => {
     return [
       {
-        title: localizeThis("idColumnTitle"),
-        dataIndex: "id",
-        key: "id",
-      },
-      {
         title: localizeThis("nameSurnameColumnTitle"),
         dataIndex: "nameSurname",
         key: "nameSurname",

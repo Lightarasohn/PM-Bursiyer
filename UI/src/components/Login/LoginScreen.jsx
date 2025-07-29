@@ -22,19 +22,21 @@ import {
 import { useLocalization } from "../../Localization/LocalizationContext";
 import "./LoginScreen.css";
 import LoginAPI from "../API/LoginAPI";
-
+import RegisterAPI from "../API/RegisterAPI";
+import { decryptToken } from "../../CryptoToken/AES-CBC";
+ 
 const { Title, Text, Link } = Typography;
-
+ 
 const LoginScreen = () => {
   const { localizeThis } = useLocalization();
   const [messageApi, contextHolder] = message.useMessage();
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
-
+ 
   const [loginForm] = Form.useForm();
   const [registerForm] = Form.useForm();
-
+ 
   const handleLogin = async (values) => {
     setLoginLoading(true);
     try {
@@ -44,35 +46,50 @@ const LoginScreen = () => {
         password: values.password,
       }
       const response = await LoginAPI(ValuesToSend);
+      
+      
+      
       if(response){
+        const encryptedToken = response.token;
+        const decryptedToken = decryptToken(encryptedToken);
         messageApi.success("Login successful!");
-        localStorage.setItem("userToken", response.token);
+        localStorage.setItem("userToken", encryptedToken);
+        console.log("Kullanıcı Dili",response.language)
         localStorage.setItem("lang", response.language);
-        window.location.href = "/"; 
+        console.log(encryptedToken);
+        console.log(decryptedToken);
+        // window.location.href = "/";
       } else {
         messageApi.error("Login failed. Please check your credentials.");
       }
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
       messageApi.error("Login failed. Please check your credentials.");
     } finally {
       setLoginLoading(false);
     }
   };
-
+ 
   const handleRegister = async (values) => {
     setRegisterLoading(true);
     try {
-      console.log("Register values:", values);
-      // Burada register API çağrısı yapılacak
-      messageApi.success("Registration successful!");
-      setActiveTab("login");
+      const registerValues ={
+        nameSurname: values.firstName,
+        email: values.email,
+        password : values.password,
+      }
+      const response = await RegisterAPI(registerValues);
+      if (response) {
+        messageApi.success("Register successfully!")
+        setActiveTab("login")
+      }
     } catch (error) {
       messageApi.error("Registration failed. Please try again.");
     } finally {
       setRegisterLoading(false);
     }
   };
-
+ 
   const LoginForm = () => (
     <Form
       form={loginForm}
@@ -101,7 +118,7 @@ const LoginScreen = () => {
           style={{ borderRadius: "8px", padding: "12px" }}
         />
       </Form.Item>
-
+ 
       <Form.Item
         label={
           <span style={{ fontWeight: "500", fontSize: "14px" }}>
@@ -121,7 +138,7 @@ const LoginScreen = () => {
           style={{ borderRadius: "8px", padding: "12px" }}
         />
       </Form.Item>
-
+ 
       <Form.Item style={{ marginBottom: "16px" }}>
         <Button
           type="primary"
@@ -141,7 +158,7 @@ const LoginScreen = () => {
           {loginLoading ? "Signing In..." : "Sign In"}
         </Button>
       </Form.Item>
-
+ 
       <div style={{ textAlign: "center" }}>
         <Link
           style={{ color: "#667eea", fontSize: "14px" }}
@@ -152,7 +169,7 @@ const LoginScreen = () => {
       </div>
     </Form>
   );
-
+ 
   const RegisterForm = () => (
     <Form
       form={registerForm}
@@ -205,7 +222,7 @@ const LoginScreen = () => {
           </Form.Item>
         </Col>
       </Row>
-
+ 
       <Form.Item
         label={
           <span style={{ fontWeight: "500", fontSize: "14px" }}>
@@ -225,7 +242,7 @@ const LoginScreen = () => {
           style={{ borderRadius: "8px", padding: "12px" }}
         />
       </Form.Item>
-
+ 
       <Form.Item
         label={
           <span style={{ fontWeight: "500", fontSize: "14px" }}>
@@ -248,7 +265,7 @@ const LoginScreen = () => {
           style={{ borderRadius: "8px", padding: "12px" }}
         />
       </Form.Item>
-
+ 
       <Form.Item
         label={
           <span style={{ fontWeight: "500", fontSize: "14px" }}>
@@ -279,7 +296,7 @@ const LoginScreen = () => {
           style={{ borderRadius: "8px", padding: "12px" }}
         />
       </Form.Item>
-
+ 
       <Form.Item style={{ marginBottom: "16px" }}>
         <Button
           type="primary"
@@ -301,7 +318,7 @@ const LoginScreen = () => {
       </Form.Item>
     </Form>
   );
-
+ 
   const tabItems = [
     {
       key: "login",
@@ -324,20 +341,18 @@ const LoginScreen = () => {
       children: <RegisterForm />,
     },
   ];
-
+ 
   return (
     <div
       style={{
         minHeight: "100vh",
         background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-        display: "flex",
-        alignItems: "center",
         justifyContent: "center",
         padding: "20px",
       }}
     >
       {contextHolder}
-      
+     
       <Row justify="center" align="middle" style={{ width: "100%", minHeight: "100vh" }}>
         <Col xs={24} sm={20} md={16} lg={12} xl={10} xxl={8}>
           {/* Logo/Brand Section */}
@@ -370,7 +385,7 @@ const LoginScreen = () => {
               Welcome to the academic portal
             </Text>
           </div>
-
+ 
           {/* Main Card */}
           <Card
             style={{
@@ -397,7 +412,7 @@ const LoginScreen = () => {
               items={tabItems}
             />
           </Card>
-
+ 
           {/* Footer */}
           <div style={{ textAlign: "center", marginTop: "24px" }}>
             <Text type="secondary" style={{ fontSize: "14px" }}>
@@ -430,5 +445,5 @@ const LoginScreen = () => {
     </div>
   );
 };
-
+ 
 export default LoginScreen;

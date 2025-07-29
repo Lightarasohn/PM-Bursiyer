@@ -77,10 +77,11 @@ const MainLayout = () => {
             overflow: "auto",
           }}
         >
-          <Header theme ="dark"
+          <Header 
             style={{
               padding: "0 20px",
               position: "fixed",
+              color: "white",
               width: `calc(100% - ${siderWidth}px)`,
               left: siderWidth,
               top: 0,
@@ -97,7 +98,7 @@ const MainLayout = () => {
                 style={{
                   marginRight: 10,
                   border: "none",
-                  background: "transparent",
+                  // background: "transparent",
                   cursor: "pointer",
                   fontSize: "20px",
                 }}
@@ -108,7 +109,7 @@ const MainLayout = () => {
                 onClick={() => setLanguage("en")}
                 style={{
                   border: "none",
-                  background: "transparent",
+                  // background: "transparent",
                   cursor: "pointer",
                   fontSize: "20px",
                 }}
@@ -142,7 +143,7 @@ const MainLayout = () => {
               background: colorBgContainer,
             }}
           >
-            Ant Design ©{new Date().getFullYear()} Created by Ant UED
+            Professional Minds ©{new Date().getFullYear()}
           </Footer>
         </Layout>
       </Layout>

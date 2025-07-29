@@ -50,19 +50,26 @@ namespace API.Services
             return encryptedToken;
         }
 
-        public string EncryptToken(string jwtToken)
-        {
-            var key = Encoding.UTF8.GetBytes(_configuration["JWT:ENCRYPTIONKEY"] ?? throw new Exception("Encryption key not found"));
-            using var aes = Aes.Create();
-            aes.Key = key;
-            aes.GenerateIV();
-            using var encryptor = aes.CreateEncryptor();
-            using var ms = new MemoryStream();
-            ms.Write(aes.IV, 0, aes.IV.Length); // IV başa yazılır
-            using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
-            using var writer = new StreamWriter(cs);
-            writer.Write(jwtToken);
-            return Convert.ToBase64String(ms.ToArray());
-        }
+       public string EncryptToken(string jwtToken)
+{
+    var key = Encoding.UTF8.GetBytes(_configuration["JWT:ENCRYPTIONKEY"] ?? throw new Exception("Encryption key not found"));
+    using var aes = Aes.Create();
+    aes.Key = key;
+    aes.GenerateIV();
+
+    using var encryptor = aes.CreateEncryptor();
+    using var ms = new MemoryStream();
+
+    // IV'yi başa yaz
+    ms.Write(aes.IV, 0, aes.IV.Length);
+
+    using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+    using (var writer = new StreamWriter(cs))
+    {
+        writer.Write(jwtToken);
+    }  // Burada writer.Dispose() ve cs.Dispose() çağrılır, flush yapılır
+
+    return Convert.ToBase64String(ms.ToArray());
+}
     }
 }

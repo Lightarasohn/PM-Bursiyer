@@ -167,7 +167,6 @@ const DraggableAntdTable = ({
   exportFileName = "export",
   onExport,
   localizeThis,
-
   showEdit = false,
   showDelete = false,
   editConfig = {},
@@ -180,6 +179,7 @@ const DraggableAntdTable = ({
   const [exportLoading, setExportLoading] = useState(false);
   const searchInput = useRef(null);
   // const { setLanguage, language, t } = useLocalization();
+  
   // Edit konfigürasyonu için default değerler
   const defaultEditConfig = {
     title: localizeThis("editTitle"),
@@ -188,7 +188,7 @@ const DraggableAntdTable = ({
     buttonSize: "small",
     buttonDanger: false,
     icon: <EditOutlined />,
-    width: 80,
+    width: 45,
     fixed: false,
     ...editConfig,
   };
@@ -205,7 +205,7 @@ const DraggableAntdTable = ({
     confirmDescription: localizeThis("deleteConfirmDescription"),
     confirmOkText: localizeThis("deleteConfirmOkText"),
     confirmCancelText: localizeThis("deleteConfirmCancelText"),
-    width: 80,
+    width: 45,
     fixed: false,
     ...deleteConfig,
   };
@@ -216,7 +216,7 @@ const DraggableAntdTable = ({
     key: "edit",
     width: defaultEditConfig.width,
     fixed: defaultEditConfig.fixed ? "left" : false,
-    align: defaultEditConfig.fixed ? "left" : "center",
+    align: "center",
     render: (_, record, index) => (
       <Button
         type={defaultEditConfig.buttonType}
@@ -225,11 +225,15 @@ const DraggableAntdTable = ({
         icon={defaultEditConfig.icon}
         onClick={() => onEdit && onEdit(record, index)}
         loading={false}
-        style={
-          defaultEditConfig.fixed ? {} : { margin: "0 auto", display: "block" }
-        }
+        style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center", 
+          minWidth: "32px",
+          padding: "4px 6px"
+        }}
       >
-        {defaultEditConfig.buttonText}
+        {!defaultEditConfig.icon && defaultEditConfig.buttonText}
       </Button>
     ),
   });
@@ -240,7 +244,7 @@ const DraggableAntdTable = ({
     key: "delete",
     width: defaultDeleteConfig.width,
     fixed: defaultDeleteConfig.fixed ? "right" : false,
-    align: defaultDeleteConfig.fixed ? "right" : "center",
+    align: "center",
     render: (_, record, index) => (
       <Popconfirm
         title={defaultDeleteConfig.confirmTitle}
@@ -255,13 +259,15 @@ const DraggableAntdTable = ({
           danger={defaultDeleteConfig.buttonDanger}
           icon={defaultDeleteConfig.icon}
           loading={false}
-          style={
-            defaultDeleteConfig.fixed
-              ? {}
-              : { margin: "0 auto", display: "block" }
-          }
+          style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            minWidth: "32px",
+            padding: "4px 6px"
+          }}
         >
-          {defaultDeleteConfig.buttonText}
+          {!defaultDeleteConfig.icon && defaultDeleteConfig.buttonText}
         </Button>
       </Popconfirm>
     ),
@@ -589,8 +595,83 @@ const DraggableAntdTable = ({
     },
   };
 
+  // Improved table styles with zebra striping and better borders
+  const tableStyle = {
+    ...style,
+  };
+
+  const customClassName = `
+    enhanced-table
+    ${className || ''}
+  `;
+
+  // CSS styles for enhanced table appearance
+  const customTableStyles = `
+    .enhanced-table .ant-table-thead > tr > th {
+      background: linear-gradient(145deg, #f8f9fa, #e9ecef) !important;
+      border: 1px solid #dee2e6 !important;
+      font-weight: 600;
+      color: #495057;
+      text-align: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    
+    .enhanced-table .ant-table-tbody > tr > td {
+      border: 1px solid #dee2e6 !important;
+      transition: background-color 0.2s ease;
+    }
+    
+    .enhanced-table .ant-table-tbody > tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    
+    .enhanced-table .ant-table-tbody > tr:nth-child(odd) {
+      background-color: #ffffff;
+    }
+    
+    .enhanced-table .ant-table-tbody > tr:hover > td {
+      background-color: #e3f2fd !important;
+    }
+    
+    .enhanced-table .ant-table {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .enhanced-table .ant-table-container {
+      border-radius: 8px;
+    }
+    
+    .enhanced-table .ant-table-thead > tr:first-child > th:first-child {
+      border-top-left-radius: 7px;
+    }
+    
+    .enhanced-table .ant-table-thead > tr:first-child > th:last-child {
+      border-top-right-radius: 7px;
+    }
+    
+    .enhanced-table .ant-pagination {
+      margin-top: 16px;
+      text-align: center;
+    }
+    
+    .enhanced-table .ant-btn {
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+    
+    .enhanced-table .ant-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+  `;
+
   return (
     <div>
+      <style>{customTableStyles}</style>
+      
       {showExportButton && (
         <div
           style={{
@@ -644,11 +725,11 @@ const DraggableAntdTable = ({
               pagination={pagination}
               size={size}
               scroll={scroll}
-              bordered={bordered}
+              bordered={true}
               showHeader={showHeader}
               onRow={onRow}
-              className={className}
-              style={style}
+              className={customClassName}
+              style={tableStyle}
             />
           </DragIndexContext.Provider>
         </SortableContext>

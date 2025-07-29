@@ -14,6 +14,8 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "antd": "^5.26.6",
+    "crypto-js": "^4.2.0",
+    "crypto.js": "^3.3.4",
     "exceljs": "^4.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
