@@ -29,6 +29,7 @@ import {
   InfoCircleOutlined
 } from '@ant-design/icons';
 import DraggableAntdTable from '../../reusableComponents/DraggableAntdTable';
+import GetScholarAPI from "../../services/GetScholarAPI"
 
 const { Title, Text } = Typography;
 
@@ -79,15 +80,14 @@ const ScholarInfo = () => {
 
   // API calls
   const fetchScholarData = async (scholarId) => {
-    try {
-      const response = await fetch(`/api/reactScholar/getScholarInfoById?targetID=${scholarId}`);
-      if (!response.ok) throw new Error("API hatası");
-      const data = await response.json();
-      setScholarData(data);
-    } catch (error) {
-      console.error("Scholar API hatası:", error);
+    const scholar = await GetScholarAPI(scholarId);
+    setScholarData(scholar);
+    if (!scholar) {
       message.error("Bursiyer bilgileri alınamadı");
+      setLoading(false);
+      return;
     }
+    setScholarData(scholar);
   };
 
   const fetchPeriodData = async (scholarId) => {
@@ -383,20 +383,20 @@ const ScholarInfo = () => {
         </Col>
         <Col flex={1}>
           <Title level={3} style={{ color: 'white', margin: 0, marginBottom: '4px' }}>
-            {scholarData?.NAME_SURNAME || "Yükleniyor..."}
+            {scholarData?.nameSurname || "Yükleniyor..."}
           </Title>
           <Space size="large" wrap>
             <span style={{ opacity: 0.9 }}>
               <MailOutlined style={{ marginRight: '6px' }} />
-              {scholarData?.EMAIL || "E-posta belirtilmemiş"}
+              {scholarData?.email || "E-posta belirtilmemiş"}
             </span>
             <span style={{ opacity: 0.9 }}>
               <PhoneOutlined style={{ marginRight: '6px' }} />
-              {scholarData?.PHONE || "Telefon belirtilmemiş"}
+              {scholarData?.phone || "Telefon belirtilmemiş"}
             </span>
             <Badge
-              status={scholarData?.DELETED ? "error" : "success"}
-              text={scholarData?.DELETED ? "Silinmiş" : "Aktif"}
+              status={scholarData?.deleted ? "error" : "success"}
+              text={scholarData?.deleted ? "Silinmiş" : "Aktif"}
               style={{ color: 'white' }}
             />
           </Space>
@@ -423,7 +423,7 @@ const ScholarInfo = () => {
             Dönem Adı
           </div>
           <div style={{ fontWeight: 500 }}>
-            {periodData?.PeriodName || "Belirtilmemiş"}
+            {periodData?.name || "Belirtilmemiş"}
           </div>
         </Col>
         <Col xs={24} sm={12} md={4}>
@@ -431,7 +431,7 @@ const ScholarInfo = () => {
             Başlangıç
           </div>
           <div style={{ fontWeight: 500 }}>
-            {formatDate(periodData?.StartDate)}
+            {formatDate(periodData?.startDate)}
           </div>
         </Col>
         <Col xs={24} sm={12} md={4}>
@@ -439,20 +439,20 @@ const ScholarInfo = () => {
             Bitiş
           </div>
           <div style={{ fontWeight: 500 }}>
-            {formatDate(periodData?.EndDate)}
+            {formatDate(periodData?.endDate)}
           </div>
         </Col>
         <Col xs={24} sm={12} md={5}>
           <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
             Sorumlu Akademisyen
           </div>
-          {academicianData?.NAME_SURNAME ? (
+          {academicianData?.nameSurname ? (
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <img
                 src={
-                  academicianData?.PHOTO_PATH
-                    ? `https://localhost:44350${academicianData.PHOTO_PATH}`
-                    : academicianData?.GENDER === "Kadın"
+                  academicianData?.photoPath
+                    ? `https://localhost:44350${academicianData.photoPath}`
+                    : academicianData?.gender === "Kadın"
                     ? "/Resources/images/femaleNoImage.png"
                     : "/Resources/images/maleNoImage.png"
                 }
