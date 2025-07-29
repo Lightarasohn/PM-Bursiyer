@@ -23,6 +23,18 @@ namespace API.Repositories
             _logger = logger;
         }
 
+        public Scholar AddScholar(ScholarDTO scholarDTO, bool SAVE_CHANGES)
+        {
+            _logger.LogInformation("AddScholar executing");
+
+            Scholar scholarToAdd = scholarDTO.ToModel();
+            scholarToAdd.Deleted = false;
+            var result = _context.Scholars.Add(scholarToAdd);
+            Scholar addedScholar = result.Entity;
+            if (SAVE_CHANGES) _context.SaveChanges();
+            return addedScholar;
+        }
+
         public async Task<Scholar> AddScholarAsync(ScholarDTO scholarDto)
         {
             _logger.LogInformation("AddScholarAsync executing");

@@ -23,6 +23,42 @@ namespace API.Repositories
             _logger = logger;
         }
 
+        public Term AddTerm(TermDTO termDto, bool SAVE_CHANGES)
+        {
+            _logger.LogInformation("AddTerm executing");
+
+            if (string.IsNullOrWhiteSpace(termDto.Name))
+                throw new ArgumentException("Term name cannot be empty.");
+
+            if (termDto.EndDate < termDto.StartDate)
+                throw new ArgumentException("End date cannot be before start date.");
+
+            bool alreadyExists = _context.Terms
+                .Any(t =>
+                    t.Name.ToLower() == termDto.Name.ToLower() &&
+                    t.StartDate == termDto.StartDate &&
+                    t.EndDate == termDto.EndDate &&
+                    !t.Deleted);
+            if (alreadyExists)
+                throw new InvalidOperationException("A term with the same name and dates already exists.");
+
+            if (termDto.ResponsibleAcademician != null)
+            {
+                bool academicianExists = _context.Academicians
+                    .Any(a => a.Id == termDto.ResponsibleAcademician && !a.Deleted);
+                if (!academicianExists)
+                    throw new InvalidOperationException("Responsible academician does not exist.");
+            }
+
+            Term termToAdd = termDto.ToModel();
+            termToAdd.Deleted = false;
+
+            var result = _context.Terms.Add(termToAdd);
+            if (SAVE_CHANGES) _context.SaveChanges();
+
+            return result.Entity;
+        }
+
         public async Task<Term> AddTermAsync(TermDTO termDto)
         {
             _logger.LogInformation("AddTermAsync executing");

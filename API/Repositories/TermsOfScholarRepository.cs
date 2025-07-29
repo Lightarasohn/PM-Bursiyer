@@ -20,6 +20,39 @@ namespace API.Repositories
             _context = context;
             _logger = logger;
         }
+
+        public TermsOfScholar AddTermsOfScholar(TermsOfScholarDTO termsOfScholarDto, bool SAVE_CHANGES)
+        {
+            _logger.LogInformation("AddTermsOfScholar executing");
+
+            var scholarExists = _context.Scholars.Any(s => s.Id == termsOfScholarDto.ScholarId && !s.Deleted);
+            if(!scholarExists) throw new Exception($"Scholar with id={termsOfScholarDto.ScholarId} not found");
+
+            var termExists = _context.Terms.Any(t => t.Id == termsOfScholarDto.TermId && !t.Deleted);
+            if(!termExists) throw new Exception($"Term with id={termsOfScholarDto.TermId} not found");
+
+            var existing = _context.TermsOfScholars
+                .FirstOrDefault(ts => ts.ScholarId == termsOfScholarDto.ScholarId && ts.TermId == termsOfScholarDto.TermId && !ts.Deleted);
+
+            if (existing != null)
+            {
+                throw new Exception($"TermsOfScholar entry already exists for ScholarId={termsOfScholarDto.ScholarId} and TermId={termsOfScholarDto.TermId}");
+            }
+
+            if (termsOfScholarDto.StartDate.HasValue && termsOfScholarDto.EndDate.HasValue &&
+                termsOfScholarDto.StartDate > termsOfScholarDto.EndDate)
+            {
+                throw new Exception("StartDate cannot be after EndDate.");
+            }
+
+            TermsOfScholar termsOfScholarToAdd = termsOfScholarDto.ToModel();
+            termsOfScholarToAdd.Deleted = false;
+
+            var result = _context.TermsOfScholars.Add(termsOfScholarToAdd);
+            if (SAVE_CHANGES) _context.SaveChanges();
+            return result.Entity;
+        }
+
         public async Task<TermsOfScholar> AddTermsOfScholarAsync(TermsOfScholarDTO termsOfScholarDto)
         {
             _logger.LogInformation("AddTermsOfScholarAsync executing");

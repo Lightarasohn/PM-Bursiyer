@@ -14,6 +14,7 @@ namespace API.Interfaces
         Task<IEnumerable<TermsOfScholar>> GetTermsOfScholarsByTermIdAsync(int termId);
         Task<TermsOfScholar> GetTermsOfScholarByIdAsync(int scholarId, int termId);
         Task<TermsOfScholar> AddTermsOfScholarAsync(TermsOfScholarDTO termsOfScholarDto);
+        TermsOfScholar AddTermsOfScholar(TermsOfScholarDTO termsOfScholarDTO, bool SAVE_CHANGES);
         Task<TermsOfScholar> UpdateTermsOfScholarAsync(TermsOfScholarDTO termsOfScholarDto, int scholarId, int termId);
         Task<TermsOfScholar> DeleteTermsOfScholarAsync(int scholarId, int termId);
     }

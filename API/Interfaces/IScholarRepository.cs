@@ -12,6 +12,7 @@ namespace API.Interfaces
         Task<IEnumerable<Scholar>> GetAllScholarsAsync();
         Task<Scholar> GetScholarByIdAsync(int id);
         Task<Scholar> AddScholarAsync(ScholarDTO scholarDto);
+        Scholar AddScholar(ScholarDTO scholarDTO, bool SAVE_CHANGES);
         Task<Scholar> UpdateScholarAsync(ScholarDTO scholarDto, int id);
         Task<Scholar> DeleteScholarAsync(int id);
     }

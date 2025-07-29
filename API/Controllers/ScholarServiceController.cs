@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers
 {
     [ApiController]
-    [Route("api/scholar-add-full")]
+    [Route("api/scholar-service")]
     public class ScholarServiceController : ControllerBase
     {
         private readonly IScholarAddService _scholarAddService;
@@ -18,7 +18,20 @@ namespace API.Controllers
             _scholarAddService = scholarAddService;
         }
 
-        [HttpPost]
+        [HttpPost("add-scholar-async")]
+        public async Task<IActionResult> AddScholarFullAsync([FromBody] ScholarAddDto scholarAddDto)
+        {
+            try
+            {
+                var scholarResponse = await _scholarAddService.AddScholarFullAsync(scholarAddDto);
+                return Ok(scholarResponse);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpPost("add-scholar")]
         public async Task<IActionResult> AddScholarFull([FromBody] ScholarAddDto scholarAddDto)
         {
             try

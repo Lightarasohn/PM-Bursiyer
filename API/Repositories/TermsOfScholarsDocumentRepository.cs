@@ -21,6 +21,81 @@ namespace API.Repositories
             _logger = logger;
         }
 
+        public List<TermsOfScholarsDocument> AddRangeTermsOfScholarsDocument(List<TermsOfScholarsDocumentDTO> termsOfScholarsDocumentDtoList, bool SAVE_CHANGES)
+        {
+            _logger.LogInformation($"AddRangeTermsOfScholarsDocumentAsync executing with {termsOfScholarsDocumentDtoList.Count} items");
+            
+            if (!termsOfScholarsDocumentDtoList.Any())
+                return new List<TermsOfScholarsDocument>();
+
+            // İlk öğeden scholarId ve termId'yi al (hepsi aynı olacak)
+            var scholarId = termsOfScholarsDocumentDtoList.First().ScholarId;
+            var termId = termsOfScholarsDocumentDtoList.First().TermId;
+            var documentTypeIds = termsOfScholarsDocumentDtoList.Select(dto => dto.DocumentTypeId).Distinct().ToList();
+
+            // Tek sorguda gerekli verileri çek
+            var scholar = _context.Scholars.Any(s => s.Id == scholarId && !s.Deleted);
+            if (!scholar)
+                throw new Exception($"Scholar with ID={scholarId} not found");
+
+            var term = _context.Terms.Any(t => t.Id == termId && !t.Deleted);
+            if (!term)
+                throw new Exception($"Term with ID={termId} not found");
+
+            var documentTypes = _context.DocumentTypes
+                .Where(dt => documentTypeIds.Contains(dt.Id) && !dt.Deleted)
+                .ToDictionary(dt => dt.Id, dt => dt);
+
+            // Mevcut dökümanları kontrol et
+            var existingDocuments = _context.TermsOfScholarsDocuments
+                .Where(tsd => tsd.ScholarId == scholarId &&
+                            tsd.TermId == termId &&
+                            documentTypeIds.Contains(tsd.DocumentTypeId))
+                .Select(tsd => new { tsd.DocumentTypeId, tsd.ListType })
+                .ToHashSet();
+
+            var entitiesToAdd = new List<TermsOfScholarsDocument>();
+            var errors = new List<string>();
+
+            foreach (var dto in termsOfScholarsDocumentDtoList)
+            {
+                // DocumentType validasyonu
+                if (!documentTypes.ContainsKey(dto.DocumentTypeId))
+                {
+                    errors.Add($"DocumentType with ID={dto.DocumentTypeId} not found");
+                    continue;
+                }
+
+                // Mevcut döküman kontrolü
+                var documentKey = new { dto.DocumentTypeId, dto.ListType };
+                if (existingDocuments.Contains(documentKey!))
+                {
+                    errors.Add($"Document already exists for ScholarId={scholarId}, TermId={termId}, DocumentTypeId={dto.DocumentTypeId}, ListType={dto.ListType}");
+                    continue;
+                }
+
+                // Entity oluştur ve listeye ekle
+                var entity = dto.ToModel();
+                entitiesToAdd.Add(entity);
+            }
+
+            // Eğer hata varsa exception fırlat
+            if (errors.Any())
+            {
+                throw new Exception($"Validation errors: {string.Join("; ", errors)}");
+            }
+
+            // Toplu ekleme yap
+            if (entitiesToAdd.Any())
+            {
+                _context.TermsOfScholarsDocuments.AddRange(entitiesToAdd);
+                if (SAVE_CHANGES) _context.SaveChanges();
+            }
+
+            _logger.LogInformation($"Successfully added {entitiesToAdd.Count} TermsOfScholarsDocuments");
+            return entitiesToAdd;
+        }
+
         public async Task<List<TermsOfScholarsDocument>> AddRangeTermsOfScholarsDocumentAsync(List<TermsOfScholarsDocumentDTO> list)
         {
             _logger.LogInformation($"AddRangeTermsOfScholarsDocumentAsync executing with {list.Count} items");
@@ -94,6 +169,11 @@ namespace API.Repositories
 
             _logger.LogInformation($"Successfully added {entitiesToAdd.Count} TermsOfScholarsDocuments");
             return entitiesToAdd;
+        }
+
+        public TermsOfScholarsDocument AddTermsOfScholarsDocument(TermsOfScholarsDocumentDTO termsOfScholarsDocumentDTO, bool SAVE_CHANGES)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<TermsOfScholarsDocument> AddTermsOfScholarsDocumentAsync(TermsOfScholarsDocumentDTO dto)
