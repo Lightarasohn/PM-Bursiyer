@@ -206,7 +206,8 @@ const MainLayout = () => {
             boxShadow: "2px 0 6px rgba(0, 0, 0, 0.1)",
           }}
         >
-          <div
+          <a
+            href="/"
             style={{
               height: 32,
               margin: 16,
@@ -221,10 +222,10 @@ const MainLayout = () => {
             }}
           >
             {collapsed ? 'PM' : 'Professional Minds'}
-          </div>
-          <Menu 
-            theme="dark" 
-            mode="inline" 
+          </a>
+          <Menu
+            theme="dark"
+            mode="inline"
             items={menuItems}
             style={{
               borderRight: 0,
