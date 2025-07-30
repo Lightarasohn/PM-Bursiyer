@@ -115,7 +115,7 @@ app.UseExceptionHandler(errorApp =>
     {
         var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
 
-        var emailService = context.RequestServices.GetRequiredService<EmailService>();
+        var emailService = context.RequestServices.GetRequiredService<IEmailService>();
         await emailService.SendEmailToAdmin(error?.ToString());
 
         context.Response.StatusCode = 500;

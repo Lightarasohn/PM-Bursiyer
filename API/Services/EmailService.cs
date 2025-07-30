@@ -23,7 +23,7 @@ namespace API.Services
             client.Credentials = new NetworkCredential(_smtpSettings.SmtpUserName, _smtpSettings.SmtpPassword);
             client.EnableSsl = _smtpSettings.EnableSSL;
 
-            var mail = new MailMessage(_smtpSettings.SmtpUserName, _smtpSettings.AdminEmail)
+            var mail = new MailMessage(_smtpSettings.FromUserName, _smtpSettings.AdminEmail)
             {
                Subject = "Sistemde Hata Oluştu",
                Body = errorMessage
