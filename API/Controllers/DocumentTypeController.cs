@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers
 {
     [ApiController]
-    [Route("api/document")]
+    [Route("api/document-type")]
     public class DocumentTypeController : ControllerBase
     {
         private readonly IDocumentTypeRepository _documentTypeRepo;

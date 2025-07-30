@@ -104,6 +104,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IScholarAddService, ScholarAddService>();
 builder.Services.AddScoped<ISozlukRepository, SozlukRepository>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 
 
 
