@@ -13,6 +13,12 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel((context, options) =>
+{
+    options.Configure(context.Configuration.GetSection("Kestrel"));
+});
+
+
 // Add services to the container.
 builder.Services.AddControllers().AddNewtonsoftJson(option =>
     option.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
@@ -155,15 +161,13 @@ app.Use(async (context, next) =>
         context.Response.Body = originalBodyStream;
     }
 });
-if (app.Environment.IsDevelopment())
-{
+
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(c =>
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "PM Bursiyer API v1")
     );
 
-}
 
 app.UseHttpsRedirection();
 
