@@ -4,13 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.DTOs.AcademicianDTOs;
 using API.DTOs.DocumentDTO;
+using API.DTOs.DocumentDTOs;
 using API.Models;
 
 namespace API.Mappers
 {
     public static class DocumentMappers
     {
-        public static Document ToModel(this DocumentDTO dto, int creUserId)
+        public static Document ToModel(this DocumentAddDTO dto)
         {
             return new Document
             {
@@ -21,7 +22,7 @@ namespace API.Mappers
                 DocName = dto.DocName,
                 Path = dto.Path,
                 FullPath = dto.FullPath,
-                CreUser = creUserId,
+                CreUser = dto.CreUserId,
                 Deleted = false,
                 DelDate = null,
                 DelUser = null,

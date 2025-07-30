@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.DTOs.AcademicianDTOs;
 using API.DTOs.DocumentDTO;
+using API.DTOs.DocumentDTOs;
 using API.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -74,8 +75,8 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("{creUserId}")]
-        public async Task<IActionResult> AddDocument([FromBody] DocumentDTO documentDTO , [FromRoute]int creUserId)
+        [HttpPost]
+        public async Task<IActionResult> AddDocument([FromBody] DocumentAddDTO documentAddDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -83,7 +84,7 @@ namespace API.Controllers
             }
             try
             {
-                var document = await _documentRepository.AddDocumentAsync(documentDTO, creUserId);
+                var document = await _documentRepository.AddDocumentAsync(documentAddDTO);
                 return CreatedAtAction(nameof(GetDocumentById), new { id = document.Id }, document);
             }
             catch (Exception ex)

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using API.Data;
 using API.DTOs.AcademicianDTOs;
 using API.DTOs.DocumentDTO;
+using API.DTOs.DocumentDTOs;
 using API.Interfaces;
 using API.Mappers;
 using API.Models;
@@ -23,11 +24,11 @@ namespace API.Repositories
             _logger = logger;
         }
 
-        public async Task<Document> AddDocumentAsync(DocumentDTO documentDTO, int creUserId)
+        public async Task<Document> AddDocumentAsync(DocumentAddDTO documentDTO)
         {
             _logger.LogInformation("AddAcademicianAsync executing");
      
-            Document documentToAdd = documentDTO.ToModel(creUserId);
+            Document documentToAdd = documentDTO.ToModel();
             var result = await _context.Documents.AddAsync(documentToAdd);
             Document addedDocument = result.Entity;
             await _context.SaveChangesAsync();
