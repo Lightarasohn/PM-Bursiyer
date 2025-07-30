@@ -25,7 +25,7 @@ namespace API.Services
 
             var mail = new MailMessage
             {
-                From = new MailAddress(_smtpSettings.SmtpUserName),
+                From = new MailAddress(_smtpSettings.FromUserName),
                 Subject = "Sistemde Hata Oluştu",
                 Body = errorMessage
             };

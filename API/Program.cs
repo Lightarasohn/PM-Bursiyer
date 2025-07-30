@@ -133,7 +133,7 @@ app.Use(async (context, next) =>
         {
             var emailService = context.RequestServices.GetRequiredService<IEmailService>();
             await emailService.SendEmailToAdmin(
-                $"Status: {context.Response.StatusCode}, Path: {context.Request.Path}");
+                $"Status: {context.Response.StatusCode}, Path: {context.Request.Path}, Request Body: {context.Request.Body.ToString()}, Response Body: {context.Response.Body.ToString()}");
         }
     }
 });
