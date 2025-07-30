@@ -17,11 +17,15 @@ namespace API.Repositories
     public class DocumentRepository : IDocumentRepository
     {
          private readonly PostgresContext _context;
+        private readonly IConfiguration _config;
+        private string _serverUrl;
         private readonly ILogger<DocumentRepository> _logger;
-        public DocumentRepository(PostgresContext context, ILogger<DocumentRepository> logger)
+        public DocumentRepository(PostgresContext context, ILogger<DocumentRepository> logger, IConfiguration config)
         {
             _context = context;
             _logger = logger;
+            _config = config;
+            _serverUrl = _config["Kestrel:Endpoints:Https:Url"];
         }
 
         public async Task<Document> AddDocumentAsync(DocumentAddDTO documentDTO)
@@ -29,6 +33,7 @@ namespace API.Repositories
             _logger.LogInformation("AddAcademicianAsync executing");
      
             Document documentToAdd = documentDTO.ToModel();
+            documentToAdd.FullPath = _serverUrl + documentDTO.Path;
             var result = await _context.Documents.AddAsync(documentToAdd);
             Document addedDocument = result.Entity;
             await _context.SaveChangesAsync();

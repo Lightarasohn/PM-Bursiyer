@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using API.DTOs.AcademicianDTOs;
-using API.DTOs.DocumentDTO;
 using API.DTOs.DocumentDTOs;
 using API.Models;
 
@@ -13,6 +11,7 @@ namespace API.Mappers
     {
         public static Document ToModel(this DocumentAddDTO dto)
         {
+
             return new Document
             {
                 DocSource = dto.DocSource,
