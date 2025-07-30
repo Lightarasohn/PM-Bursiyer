@@ -39,7 +39,7 @@ namespace API.Controllers
                 var systemConstants = await _systemConstantsRepo.GetSystemConstantsWithQueryStringAsync(q);
                 return Ok(systemConstants);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }

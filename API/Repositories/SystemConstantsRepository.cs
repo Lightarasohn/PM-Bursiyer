@@ -31,7 +31,7 @@ namespace API.Repositories
                                                     : await _context.SystemConstants
                                                             .Where(s =>
                                                             String.Compare(s.ConstantName, query, StringComparison.CurrentCultureIgnoreCase) == 0
-                                                            || (s.ValueText != null && s.ValueText.ToLower().Contains(query.ToLower()))).ToListAsync();
+                                                            || s.ValueText != null && s.ValueText.ToLower().Contains(query.ToLower())).ToListAsync();
         }
     }
 }

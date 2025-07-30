@@ -122,6 +122,21 @@ app.UseExceptionHandler(errorApp =>
         await context.Response.WriteAsync("Bir hata oluştu.");
     });
 });
+app.Use(async (context, next) =>
+{
+    await next();
+
+    if (context.Response.StatusCode >= 400 && context.Response.StatusCode < 500)
+    {
+        // 404'leri hariç bırakabiliriz (spam olmaması için)
+        if (context.Response.StatusCode != 404)
+        {
+            var emailService = context.RequestServices.GetRequiredService<IEmailService>();
+            await emailService.SendEmailToAdmin(
+                $"Status: {context.Response.StatusCode}, Path: {context.Request.Path}");
+        }
+    }
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

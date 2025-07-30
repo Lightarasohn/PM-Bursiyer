@@ -23,12 +23,19 @@ namespace API.Services
             client.Credentials = new NetworkCredential(_smtpSettings.SmtpUserName, _smtpSettings.SmtpPassword);
             client.EnableSsl = _smtpSettings.EnableSSL;
 
-            var mail = new MailMessage(_smtpSettings.FromUserName, _smtpSettings.AdminEmail)
+            var mail = new MailMessage
             {
-               Subject = "Sistemde Hata Oluştu",
-               Body = errorMessage
+                From = new MailAddress(_smtpSettings.SmtpUserName),
+                Subject = "Sistemde Hata Oluştu",
+                Body = errorMessage
             };
 
+            var recipients = _smtpSettings.AdminEmail.Split(new[] { ";", "," }, StringSplitOptions.RemoveEmptyEntries);
+           
+            foreach (var item in recipients)
+            {
+                mail.To.Add(item.Trim());
+            }
             await client.SendMailAsync(mail);
         }
     }
