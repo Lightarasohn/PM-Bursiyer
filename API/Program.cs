@@ -72,7 +72,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme =
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme
 ).
-AddJwtBearer(options => 
+AddJwtBearer(options =>
 options.TokenValidationParameters = new TokenValidationParameters
 {
     ValidateIssuer = true,
@@ -83,7 +83,11 @@ options.TokenValidationParameters = new TokenValidationParameters
     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:SIGNINKEY"]!))
 });
 
+
 builder.Services.AddAuthorization();
+
+//smtpSettings
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 
 // Dependency Injection
 builder.Services.AddScoped<IAcademicianRepository, AcademicianRepository>();
@@ -99,9 +103,25 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IScholarAddService, ScholarAddService>();
 builder.Services.AddScoped<ISozlukRepository, SozlukRepository>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 
 
 var app = builder.Build();
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+
+        var emailService = context.RequestServices.GetRequiredService<EmailService>();
+        await emailService.SendEmailToAdmin(error?.ToString());
+
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsync("Bir hata oluştu.");
+    });
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

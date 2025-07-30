@@ -34,15 +34,8 @@ namespace API.Controllers
         [HttpGet("{q}")]
         public async Task<IActionResult> GetAllQuery([FromRoute] string q)
         {
-            try
-            {
                 var systemConstants = await _systemConstantsRepo.GetSystemConstantsWithQueryStringAsync(q);
                 return Ok(systemConstants);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
         }
     }
 }

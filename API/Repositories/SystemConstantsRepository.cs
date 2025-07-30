@@ -30,8 +30,8 @@ namespace API.Repositories
             return String.IsNullOrWhiteSpace(query) ? await _context.SystemConstants.ToListAsync()
                                                     : await _context.SystemConstants
                                                             .Where(s =>
-                                                            s.ConstantName.ToLower().Contains(query.ToLower())
-                                                            || s.ValueText != null && s.ValueText.ToLower().Contains(query.ToLower())).ToListAsync();
+                                                            String.Compare(s.ConstantName, query, StringComparison.CurrentCultureIgnoreCase) == 0
+                                                            || (s.ValueText != null && s.ValueText.ToLower().Contains(query.ToLower()))).ToListAsync();
         }
     }
 }

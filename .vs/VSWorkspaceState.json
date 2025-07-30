@@ -1,10 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\API",
-    "\\API\\DTOs",
-    "\\API\\DTOs\\ScholarAddDTOs"
+    "\\API"
   ],
-  "SelectedNode": "\\API\\DTOs\\ScholarAddDTOs\\ScholarAddDto.cs",
+  "SelectedNode": "\\API\\PM-Bursiyer.sln",
   "PreviewInSolutionExplorer": false
 }
