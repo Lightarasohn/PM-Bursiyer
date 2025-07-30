@@ -109,36 +109,51 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
-
-        var emailService = context.RequestServices.GetRequiredService<IEmailService>();
-        await emailService.SendEmailToAdmin(error?.ToString());
-
-        context.Response.StatusCode = 500;
-        await context.Response.WriteAsync("Bir hata oluştu.");
-    });
-});
 app.Use(async (context, next) =>
 {
-    await next();
+    
+    var originalBodyStream = context.Response.Body;
+    await using var responseBody = new MemoryStream();
+    context.Response.Body = responseBody;
 
-    if (context.Response.StatusCode >= 400 && context.Response.StatusCode < 500)
+    try
     {
-        // 404'leri hariç bırakabiliriz (spam olmaması için)
-        if (context.Response.StatusCode != 404)
+        await next(); 
+
+        if (context.Response.StatusCode >= 400 && context.Response.StatusCode < 500)
         {
-            var emailService = context.RequestServices.GetRequiredService<IEmailService>();
-            await emailService.SendEmailToAdmin(
-                $"Status: {context.Response.StatusCode}, Path: {context.Request.Path}, Request Body: {context.Request.Body.ToString()}, Response Body: {context.Response.Body.ToString()}");
+            if (context.Response.StatusCode != 404)
+            {
+                context.Response.Body.Seek(0, SeekOrigin.Begin);
+                string responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
+                context.Response.Body.Seek(0, SeekOrigin.Begin);
+
+                var emailService = context.RequestServices.GetRequiredService<IEmailService>();
+                await emailService.SendEmailToAdmin($@"
+                                                    Status: {context.Response.StatusCode}
+                                                    Path: {context.Request.Path}
+                                                    Response Body: {responseText}");
+            }
         }
     }
-});
+    catch (Exception ex)
+    {
+        var emailService = context.RequestServices.GetRequiredService<IEmailService>();
+        await emailService.SendEmailToAdmin($@"
+                                            500 ERROR:
+                                            Path: {context.Request.Path}
+                                            Message: {ex.Message}
+                                            Stack: {ex.StackTrace}");
 
-// Configure the HTTP request pipeline.
+        throw; 
+    }
+    finally
+    {
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        await responseBody.CopyToAsync(originalBodyStream);
+        context.Response.Body = originalBodyStream;
+    }
+});
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
