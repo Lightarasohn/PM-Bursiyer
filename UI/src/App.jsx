@@ -6,13 +6,14 @@ import MainLayout from './forms/MasterPage/MainLayout';
 import BursiyerListesi from './forms/Bursiyer/ScholarList';
 import BursiyerEkle from './forms/Bursiyer/AddScholar';
 import ScholarInfo from './forms/Bursiyer/scholarInfo';
+import Test from './forms/TestPages/Test';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginScreen />} />
-
+        <Route path="/test" element={<Test />} />
         <Route
           path="/"
           element={
