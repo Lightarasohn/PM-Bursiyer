@@ -66,8 +66,6 @@ namespace API.Repositories
             _logger.LogInformation("GetAllTermDocumentTypesAsync executing");
 
             return await _context.TermDocumentTypes
-                .Include(td => td.Term)
-                .Include(td => td.DocumentType)
                 .ToListAsync();
         }
 
