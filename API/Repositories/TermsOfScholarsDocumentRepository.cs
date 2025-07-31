@@ -251,9 +251,6 @@ namespace API.Repositories
             _logger.LogInformation("GetTermsOfScholarsDocumentsByScholarAndTermIdAsync executing");
 
             IEnumerable<TermsOfScholarsDocument> termsOfScholarsDocuments = await _context.TermsOfScholarsDocuments
-                .Include(ts => ts.DocumentType)
-                .Include(ts => ts.Scholar)
-                .Include(ts => ts.Term)
                 .Where(ts => ts.ScholarId == scholarId && ts.TermId == termId && !ts.Deleted)
                 .ToListAsync();
 
