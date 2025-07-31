@@ -28,5 +28,6 @@ namespace API.DTOs.DocumentDTOs
         public string? FullPath { get; set; }
 
         public string? GrantedRoles { get; set; }
+        public IFormFile? FileContent { get; set; }
     }
 }
