@@ -17,8 +17,8 @@ namespace API.Services
     {
         private readonly IDocumentRepository _documentRepository;
         private readonly PostgresContext _context;
-         private readonly IConfiguration _config;
-         private string _serverUrl;
+        private readonly IConfiguration _config;
+        private string? _serverUrl;
         public DocumentService(IDocumentRepository documentRepository, PostgresContext context,IConfiguration config)
         {
             _documentRepository = documentRepository;
@@ -46,15 +46,14 @@ namespace API.Services
 
             string nameWithoutExt = Path.GetFileNameWithoutExtension(dto.DocName).Replace(" ", "-");
             string extension = Path.GetExtension(dto.DocName);
-            string randomSuffix = Path.GetRandomFileName().Replace(".", "");
-            string finalFileName = $"{nameWithoutExt}-{randomSuffix}{extension}";
+            string finalFileName = $"{nameWithoutExt}{extension}";
             string path = Path.Combine(uploadFolder, finalFileName);
             string fullPath = Path.Combine(_serverUrl,path);
 
             dto.Path = Path.Combine(uploadFolder, finalFileName).Replace("\\", "/");
-            dto.FullPath = fullPath;
+            dto.FullPath = fullPath.Replace("\\", "/");
             var addedDoc = await _documentRepository.AddDocumentAsync(dto); 
-            using (var stream = new FileStream(fullPath, FileMode.Create))
+            using (var stream = new FileStream(dto.Path, FileMode.Create))
             {
                 await dto.FileContent.CopyToAsync(stream);
             }

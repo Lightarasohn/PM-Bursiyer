@@ -117,51 +117,51 @@ builder.Services.AddScoped<IDocumentService, DocumentService>();
 
 var app = builder.Build();
 
-app.Use(async (context, next) =>
-{
+//app.Use(async (context, next) =>
+//{
     
-    var originalBodyStream = context.Response.Body;
-    await using var responseBody = new MemoryStream();
-    context.Response.Body = responseBody;
+//    var originalBodyStream = context.Response.Body;
+//    await using var responseBody = new MemoryStream();
+//    context.Response.Body = responseBody;
 
-    try
-    {
-        await next(); 
+//    try
+//    {
+//        await next(); 
 
-        if (context.Response.StatusCode >= 400 && context.Response.StatusCode < 500)
-        {
-            if (context.Response.StatusCode != 404)
-            {
-                context.Response.Body.Seek(0, SeekOrigin.Begin);
-                string responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
-                context.Response.Body.Seek(0, SeekOrigin.Begin);
+//        if (context.Response.StatusCode >= 400 && context.Response.StatusCode < 500)
+//        {
+//            if (context.Response.StatusCode != 404)
+//            {
+//                context.Response.Body.Seek(0, SeekOrigin.Begin);
+//                string responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
+//                context.Response.Body.Seek(0, SeekOrigin.Begin);
 
-                var emailService = context.RequestServices.GetRequiredService<IEmailService>();
-                await emailService.SendEmailToAdmin($@"
-                                                    Status: {context.Response.StatusCode}
-                                                    Path: {context.Request.Path}
-                                                    Response Body: {responseText}");
-            }
-        }
-    }
-    catch (Exception ex)
-    {
-        var emailService = context.RequestServices.GetRequiredService<IEmailService>();
-        await emailService.SendEmailToAdmin($@"
-                                            500 ERROR:
-                                            Path: {context.Request.Path}
-                                            Message: {ex.Message}
-                                            Stack: {ex.StackTrace}");
+//                var emailService = context.RequestServices.GetRequiredService<IEmailService>();
+//                await emailService.SendEmailToAdmin($@"
+//                                                    Status: {context.Response.StatusCode}
+//                                                    Path: {context.Request.Path}
+//                                                    Response Body: {responseText}");
+//            }
+//        }
+//    }
+//    catch (Exception ex)
+//    {
+//        var emailService = context.RequestServices.GetRequiredService<IEmailService>();
+//        await emailService.SendEmailToAdmin($@"
+//                                            500 ERROR:
+//                                            Path: {context.Request.Path}
+//                                            Message: {ex.Message}
+//                                            Stack: {ex.StackTrace}");
 
-        throw; 
-    }
-    finally
-    {
-        context.Response.Body.Seek(0, SeekOrigin.Begin);
-        await responseBody.CopyToAsync(originalBodyStream);
-        context.Response.Body = originalBodyStream;
-    }
-});
+//        throw; 
+//    }
+//    finally
+//    {
+//        context.Response.Body.Seek(0, SeekOrigin.Begin);
+//        await responseBody.CopyToAsync(originalBodyStream);
+//        context.Response.Body = originalBodyStream;
+//    }
+//});
 
     app.MapOpenApi();
     app.UseSwagger();
