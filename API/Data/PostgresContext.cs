@@ -307,21 +307,27 @@ public partial class PostgresContext : DbContext
 
         modelBuilder.Entity<TermsOfScholarsDocument>(entity =>
         {
-            entity.HasKey(e => new { e.ScholarId, e.TermId, e.DocumentTypeId, e.ListType }).HasName("TERMS_OF_SCHOLARS_DOCUMENT_pkey");
+            entity.HasKey(e => e.Id1).HasName("TERMS_OF_SCHOLARS_DOCUMENT_pkey");
 
             entity.ToTable("TERMS_OF_SCHOLARS_DOCUMENT");
 
-            entity.Property(e => e.ScholarId).HasColumnName("SCHOLAR_Id");
-            entity.Property(e => e.TermId).HasColumnName("TERM_Id");
-            entity.Property(e => e.DocumentTypeId).HasColumnName("DOCUMENT_TYPE_Id");
-            entity.Property(e => e.ListType)
-                .HasColumnType("character varying")
-                .HasColumnName("LIST_TYPE");
+            entity.HasIndex(e => e.Id, "TERMS_OF_SCHOLARS_DOCUMENT_ID_key").IsUnique();
+
+            entity.Property(e => e.Id1).HasColumnName("Id");
             entity.Property(e => e.Deleted)
                 .HasDefaultValue(false)
                 .HasColumnName("DELETED");
+            entity.Property(e => e.DocumentTypeId).HasColumnName("DOCUMENT_TYPE_Id");
             entity.Property(e => e.ExpectedUploadDate).HasColumnName("EXPECTED_UPLOAD_DATE");
+            entity.Property(e => e.Id)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("ID");
+            entity.Property(e => e.ListType)
+                .HasColumnType("character varying")
+                .HasColumnName("LIST_TYPE");
             entity.Property(e => e.RealUploadDate).HasColumnName("REAL_UPLOAD_DATE");
+            entity.Property(e => e.ScholarId).HasColumnName("SCHOLAR_Id");
+            entity.Property(e => e.TermId).HasColumnName("TERM_Id");
 
             entity.HasOne(d => d.DocumentType).WithMany(p => p.TermsOfScholarsDocuments)
                 .HasForeignKey(d => d.DocumentTypeId)
