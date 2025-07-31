@@ -5,3 +5,4 @@ appsettings*.json
 /bin
 /.vs
 API.csproj.user
+/UploadedDocuments
