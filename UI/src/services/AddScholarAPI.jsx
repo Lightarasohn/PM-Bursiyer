@@ -1,6 +1,6 @@
 const AddScholarAPI = async (body) => {
-    
-    const url = `${base}/api/scholar`;
+    const base = import.meta.env.VITE_API_BASE_URL;
+    const url = `${base}api/scholar`;
     var requestOptions = {
         method: "POST",
         headers: {

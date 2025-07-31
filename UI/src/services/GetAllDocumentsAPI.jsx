@@ -1,5 +1,6 @@
 const GetAllDocumentsAPI = async () => {
-    const url = "http://localhost:5155/api/document";
+     const base = import.meta.env.VITE_API_BASE_URL;
+    const url = `${base}api/document`;
     var requestOptions = {
      
         method: "GET"

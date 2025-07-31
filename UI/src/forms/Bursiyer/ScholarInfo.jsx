@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Descriptions,
@@ -30,8 +30,21 @@ import {
 } from '@ant-design/icons';
 import DraggableAntdTable from '../../reusableComponents/DraggableAntdTable';
 import GetScholarAPI from "../../services/GetScholarAPI"
+import GetTermOfScholar from '../../services/GetTermOfScholar';
+import GetAllTermsOfScholar from '../../services/GetAllTermsOfScholar';
+import GetScholarPeriodDocuments from '../../services/GetScholarPeriodDocuments';
 
 const { Title, Text } = Typography;
+
+// Suppress Ant Design warning for React 19 compatibility
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  if (args[0]?.includes?.('antd: compatible') || 
+      args[0]?.includes?.('antd v5 support React is 16 ~ 18')) {
+    return;
+  }
+  originalWarn.apply(console, args);
+};
 
 const ScholarInfo = () => {
   // State definitions
@@ -44,25 +57,27 @@ const ScholarInfo = () => {
   const [entryModalVisible, setEntryModalVisible] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const [activeTabKey, setActiveTabKey] = useState("1");
-
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalUrl, setModalUrl] = useState('');
+  const [currentRecord, setCurrentRecord] = useState(null);
 
   // Utility functions
-  const formatDate = (dateString) => {
+  const formatDate = useCallback((dateString) => {
     if (!dateString) return "Belirtilmemiş";
     const date = new Date(dateString);
     return date.toLocaleDateString("tr-TR");
-  };
+  }, []);
 
-  const getScholarIdFromUrl = () => {
+  const getScholarIdFromUrl = useCallback(() => {
     const query = new URLSearchParams(window.location.search);
     return query.get("targetID");
-  };
+  }, []);
 
-  const isScholarStarted = () => {
+  const isScholarStarted = useCallback(() => {
     return periodData && periodData.ScholarStartDate !== null;
-  };
+  }, [periodData]);
 
-  const isPeriodDeletedOrCompleted = () => {
+  const isPeriodDeletedOrCompleted = useCallback(() => {
     if (!periodData) return true;
     
     if (periodData.DELETED === true || periodData.IsDeleted === true) return true;
@@ -76,33 +91,39 @@ const ScholarInfo = () => {
     if (periodData.ExitCompleted === true || periodData.IsExitCompleted === true) return true;
     
     return false;
-  };
+  }, [periodData]);
 
   // API calls
-  const fetchScholarData = async (scholarId) => {
-    const scholar = await GetScholarAPI(scholarId);
-    setScholarData(scholar);
-    if (!scholar) {
-      message.error("Bursiyer bilgileri alınamadı");
-      setLoading(false);
-      return;
-    }
-    setScholarData(scholar);
-  };
-
-  const fetchPeriodData = async (scholarId) => {
+  const fetchScholarData = useCallback(async (scholarId) => {
     try {
-      const response = await fetch(`/api/reactScholar/getPeriodInfoById?targetID=${scholarId}`);
-      if (!response.ok) throw new Error("API hatası");
-      const data = await response.json();
-      setPeriodData(data);
+      const scholar = await GetScholarAPI(scholarId);
+      setScholarData(scholar);
+      if (!scholar) {
+        message.error("Bursiyer bilgileri alınamadı");
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Scholar API hatası:", error);
+      message.error("Bursiyer bilgileri alınamadı");
+      return false;
+    }
+  }, []);
+
+  const fetchPeriodData = useCallback(async (scholarId) => {
+    try {
+      const period = await GetTermOfScholar(scholarId);
+      setPeriodData(period);
+      console.log("PeriodInfo", period);
+      return period;
     } catch (error) {
       console.error("Period API hatası:", error);
       message.error("Dönem bilgileri alınamadı");
+      return null;
     }
-  };
+  }, []);
 
-  const fetchAcademicianData = async (academicianId) => {
+  const fetchAcademicianData = useCallback(async (academicianId) => {
     try {
       const response = await fetch(`/api/reactScholar/getAcademicianNameByPeriodId?targetID=${academicianId}`);
       if (!response.ok) throw new Error("API hatası");
@@ -112,38 +133,40 @@ const ScholarInfo = () => {
       console.error("Academician API hatası:", error);
       message.error("Akademisyen bilgileri alınamadı");
     }
-  };
+  }, []);
 
-  const fetchPeriodDocuments = async (scholarId, periodId) => {
+  const fetchPeriodDocuments = useCallback(async (scholarId, periodId) => {
     try {
-      const response = await fetch(`/api/reactScholar/getPeriodDocuments?scholarID=${scholarId}&periodID=${periodId}`);
-      if (!response.ok) throw new Error("API hatası");
-      const data = await response.json();
-      setPeriodDocumentsData(data || []);
+      const periodDocuments = await GetScholarPeriodDocuments(scholarId, periodId);
+      console.log("PeriodDocuments", periodDocuments);
+      setPeriodDocumentsData(periodDocuments || []);
+      return periodDocuments;
     } catch (error) {
-      console.error("Period Documents API hatası:", error);
+      console.error("Period documents API hatası:", error);
       message.error("Dönem dokümanları alınamadı");
+      return [];
     }
-  };
+  }, []);
 
-  const fetchScholarPeriods = async (scholarId) => {
+  const fetchScholarPeriods = useCallback(async (scholarId) => {
     try {
-      const response = await fetch(`/api/reactScholar/getScholarPeriods?targetID=${scholarId}`);
-      if (!response.ok) throw new Error("API hatası");
-      const data = await response.json();
-      setScholarPeriods(data || []);
+      const periods = await GetAllTermsOfScholar(scholarId);
+      setScholarPeriods(periods || []);
+      console.log("PeriodInfos", periods);
+      return periods;
     } catch (error) {
-      console.error("Scholar Periods API hatası:", error);
-      message.error("Bursiyer dönemleri alınamadı");
+      console.error("Scholar periods API hatası:", error);
+      message.error("Burs dönemleri alınamadı");
+      return [];
     }
-  };
+  }, []);
 
   // Event handlers
-  const handleShowPeriodInfo = () => {
+  const handleShowPeriodInfo = useCallback(() => {
     setActiveTabKey("2");
-  };
+  }, []);
 
-  const handleAddPeriodToScholar = () => {
+  const handleAddPeriodToScholar = useCallback(() => {
     const scholarId = getScholarIdFromUrl();
     
     if (window.generalPopup && typeof window.generalPopup.SetContentUrl === 'function') {
@@ -159,42 +182,47 @@ const ScholarInfo = () => {
     } else {
       message.info("Dönem ekleme popup'ı açılacak...");
     }
-  };
+  }, [getScholarIdFromUrl]);
 
-  const handleEdit = (record) => {
+  const handleEdit = useCallback((record) => {
     if (!isScholarStarted()) {
       message.warning("Bursiyerin dönemi henüz başlamadığı için doküman düzenleme yapılamaz.");
       return;
     }
 
-    const documentTypeId = record.DOCUMENT_TYPE_ID || 0;
-    const recordId = record.ID;
+    const documentTypeId = record.documentTypeId || 0;
+    const recordId = record.id;
     const scholarId = getScholarIdFromUrl();
+    // Modal için URL oluşturma
+    const modalUrl = `/Forms/Documents/uploadedDocuments.aspx?isPopup=true&hideSrc=true&requestingFormType=6` +
+      `&requesterID=${encodeURIComponent(recordId)}` +
+      `&documentTypeID=${encodeURIComponent(documentTypeId)}` +
+      `&scholarID=${encodeURIComponent(scholarId)}`;
 
-    if (window.generalPopup && typeof window.generalPopup.SetContentUrl === 'function') {
-      const url = `/Forms/Documents/uploadedDocuments.aspx?isPopup=true&hideSrc=true&requestingFormType=6` +
-        `&requesterID=${encodeURIComponent(recordId)}` +
-        `&documentTypeID=${encodeURIComponent(documentTypeId)}` +
-        `&scholarID=${encodeURIComponent(scholarId)}`;
+    // Modal state'lerini güncelle
+    setCurrentRecord(record);
+    setModalUrl(modalUrl);
+    setIsModalVisible(true);
+  }, [isScholarStarted, getScholarIdFromUrl]);
 
-      window.generalPopup.SetSize(1200, 600);
-      window.generalPopup.SetHeaderText('Doküman Yükle');
-      window.generalPopup.SetContentUrl(url);
-      window.generalPopup.Show();
-      window.generalPopup.OnCloseButtonClick = () => {
-        window.location.href = `/Forms/ReactScholarComponents/ReactScholarInfo.aspx?scholarID=${encodeURIComponent(scholarId)}`;
-      };
-    } else {
-      message.error("generalPopup bulunamadı!");
+  const handleModalClose = useCallback(() => {
+    setIsModalVisible(false);
+    setModalUrl('');
+    setCurrentRecord(null);
+    
+    // Modal kapandığında verileri yenile
+    const scholarId = getScholarIdFromUrl();
+    if (periodData?.id) {
+      fetchPeriodDocuments(scholarId, periodData.id);
     }
-  };
+  }, [periodData?.id, getScholarIdFromUrl, fetchPeriodDocuments]);
 
-  const handleDelete = (record) => {
+  const handleDelete = useCallback((record) => {
     console.log("Delete operation:", record);
     message.info("Silme işlemi geliştirilecek");
-  };
+  }, []);
 
-  const handleEntryDocuments = () => {
+  const handleEntryDocuments = useCallback(() => {
     const scholarId = getScholarIdFromUrl();
     const periodId = periodData?.PeriodId;
 
@@ -211,9 +239,9 @@ const ScholarInfo = () => {
     } else {
       setEntryModalVisible(true);
     }
-  };
+  }, [getScholarIdFromUrl, periodData?.PeriodId]);
 
-  const handleExitDocuments = () => {
+  const handleExitDocuments = useCallback(() => {
     const scholarId = getScholarIdFromUrl();
 
     if (window.generalPopup && typeof window.generalPopup.SetContentUrl === 'function') {
@@ -229,7 +257,7 @@ const ScholarInfo = () => {
     } else {
       setExitModalVisible(true);
     }
-  };
+  }, [getScholarIdFromUrl]);
 
   // Effects
   useEffect(() => {
@@ -241,111 +269,97 @@ const ScholarInfo = () => {
 
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchScholarData(scholarId),
-        fetchPeriodData(scholarId),
-        fetchScholarPeriods(scholarId)
-      ]);
-      setLoading(false);
+      try {
+        await Promise.all([
+          fetchScholarData(scholarId),
+          fetchPeriodData(scholarId),
+          fetchScholarPeriods(scholarId)
+        ]);
+      } catch (error) {
+        console.error("Data loading error:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadData();
-  }, []);
+  }, [getScholarIdFromUrl, fetchScholarData, fetchPeriodData, fetchScholarPeriods]);
 
   useEffect(() => {
     if (periodData?.ResponsibleAcademicianId) {
       fetchAcademicianData(periodData.ResponsibleAcademicianId);
     }
-  }, [periodData]);
+  }, [periodData?.ResponsibleAcademicianId, fetchAcademicianData]);
 
   useEffect(() => {
-    if (periodData?.PeriodId) {
+    if (periodData?.id) {
       const scholarId = getScholarIdFromUrl();
-      fetchPeriodDocuments(scholarId, periodData.PeriodId);
+      fetchPeriodDocuments(scholarId, periodData.id);
     }
-  }, [periodData]);
+  }, [periodData?.id, getScholarIdFromUrl, fetchPeriodDocuments]);
 
   // Table columns
   const periodDocumentColumns = [
     {
-      title: 'Doküman Türü',
-      dataIndex: 'DOCUMENT_TYPE',
-      key: 'DOCUMENT_TYPE',
-      width: 180,
+      title: 'Belge Adı',
+      dataIndex: ['documentType', 'name'],
+      render: (name) => name || '-',
+      key: 'documentTypeId',
+      width: 200,
     },
     {
-      title: 'Liste Tipi',
-      dataIndex: 'LIST_TYPE',
-      key: 'LIST_TYPE',
+      title: 'Beklenen Yükleme',
+      dataIndex: 'expectedUploadDate',
+      key: 'expectedUploadDate',
+      render: (date) => formatDate(date),
+      width: 160,
+    },
+    {
+      title: 'Gerçek Yükleme',
+      dataIndex: 'realUploadDate',
+      key: 'realUploadDate',
+      render: (date) => formatDate(date),
+      width: 160,
+    },
+    {
+      title: 'Belge Türü',
+      dataIndex: 'listType',
+      key: 'listType',
       width: 120,
-    },
-    {
-      title: 'Beklenen Yükleme Tarihi',
-      dataIndex: 'EXPECTED_UPLOAD_DATE',
-      key: 'EXPECTED_UPLOAD_DATE',
-      width: 160,
-      render: (date) => formatDate(date),
-    },
-    {
-      title: 'Gerçek Yükleme Tarihi',
-      dataIndex: 'REAL_UPLOAD_DATE',
-      key: 'REAL_UPLOAD_DATE',
-      width: 160,
-      render: (date) => formatDate(date),
-    },
+    }
   ];
 
   const scholarPeriodColumns = [
     {
       title: 'Dönem Adı',
-      dataIndex: 'PERIOD_NAME',
-      key: 'PERIOD_NAME',
+      dataIndex: 'name', 
+      key: 'name',
       width: 180,
     },
     {
-      title: 'Akademisyen',
-      dataIndex: 'ACADEMICIAN_NAME',
-      key: 'ACADEMICIAN_NAME',
+      title: 'Başlangıç Tarihi',
+      dataIndex: 'startDate', 
+      key: 'startDate',
+      width: 160,
+      render: (date) => formatDate(date),
+    },
+    {
+      title: 'Bitiş Tarihi',
+      dataIndex: 'endDate', 
+      key: 'endDate',
+      width: 160,
+      render: (date) => formatDate(date),
+    },
+    {
+      title: 'Sorumlu Akademisyen ID',
+      dataIndex: 'responsibleAcademician', 
+      key: 'responsibleAcademician',
       width: 180,
-    },
-    {
-      title: 'Burs Türü',
-      dataIndex: 'SCHOLAR_TYPE_NAME',
-      key: 'SCHOLAR_TYPE_NAME',
-      width: 150,
-    },
-    {
-      title: 'Gerçek Başlangıç',
-      dataIndex: 'REAL_START_DATE',
-      key: 'REAL_START_DATE',
-      width: 160,
-      render: (date) => formatDate(date),
-    },
-    {
-      title: 'Gerçek Bitiş',
-      dataIndex: 'REAL_END_DATE',
-      key: 'REAL_END_DATE',
-      width: 160,
-      render: (date) => formatDate(date),
-    },
-    {
-      title: 'Beklenen Başlangıç',
-      dataIndex: 'EXPECTED_START_DATE',
-      key: 'EXPECTED_START_DATE',
-      width: 160,
-      render: (date) => formatDate(date),
-    },
-    {
-      title: 'Beklenen Bitiş',
-      dataIndex: 'EXPECTED_END_DATE',
-      key: 'EXPECTED_END_DATE',
-      width: 160,
-      render: (date) => formatDate(date),
-    },
+    }
   ];
 
-  // Localization function (mock)
-  const localizeThis = (key) => {
+  // Localization function
+  const localizeThis = useCallback((key) => {
     const translations = {
       editTitle: 'Düzenle',
       editButtonText: '',
@@ -357,10 +371,10 @@ const ScholarInfo = () => {
       deleteConfirmCancelText: 'Hayır',
     };
     return translations[key] || key;
-  };
+  }, []);
 
   // Components
-  const HeaderSection = () => (
+  const HeaderSection = useCallback(() => (
     <div
       style={{
         background: 'linear-gradient(135deg, #1e3a8a 0%, #60a5fa 100%)',
@@ -403,9 +417,9 @@ const ScholarInfo = () => {
         </Col>
       </Row>
     </div>
-  );
+  ), [scholarData]);
 
-  const PeriodInfoCard = () => (
+  const PeriodInfoCard = useCallback(() => (
     <Card
       title={
         <span>
@@ -504,9 +518,9 @@ const ScholarInfo = () => {
         </Col>
       </Row>
     </Card>
-  );
+  ), [periodData, academicianData, formatDate, handleEntryDocuments, handleExitDocuments]);
 
-  const PeriodAlternativeCard = () => (
+  const PeriodAlternativeCard = useCallback(() => (
     <Card
       title={
         <span>
@@ -560,9 +574,9 @@ const ScholarInfo = () => {
         </Button>
       </Space>
     </Card>
-  );
+  ), [handleShowPeriodInfo, handleAddPeriodToScholar]);
 
-  const MainContent = () => {
+  const MainContent = useCallback(() => {
     if (loading) {
       return <Skeleton active avatar paragraph={{ rows: 3 }} />;
     }
@@ -582,9 +596,9 @@ const ScholarInfo = () => {
         {isPeriodDeletedOrCompleted() ? <PeriodAlternativeCard /> : <PeriodInfoCard />}
       </div>
     );
-  };
+  }, [loading, scholarData, isPeriodDeletedOrCompleted, HeaderSection, PeriodAlternativeCard, PeriodInfoCard]);
 
-  const TabContent = () => (
+  const TabContent = useCallback(() => (
     <Card
       title={
         <span>
@@ -656,7 +670,7 @@ const ScholarInfo = () => {
         ]}
       />
     </Card>
-  );
+  ), [activeTabKey, periodDocumentsData, periodDocumentColumns, scholarPeriods, scholarPeriodColumns, loading, handleEdit, handleDelete, localizeThis]);
 
   return (
     <div style={{ padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -664,6 +678,30 @@ const ScholarInfo = () => {
       <div style={{ marginTop: '16px' }}>
         <TabContent />
       </div>
+
+      {/* Document Edit Modal */}
+      <Modal
+        title="Doküman Düzenle"
+        open={isModalVisible}
+        onCancel={handleModalClose}
+        footer={null}
+        width={1200}
+        styles={{ body: { height: '500px', padding: 0 } }}
+        destroyOnClose={true}
+        centered
+      >
+        {modalUrl && (
+          <iframe
+            src={modalUrl}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none'
+            }}
+            title="Document Upload"
+          />
+        )}
+      </Modal>
 
       {/* Entry Documents Modal */}
       <Modal

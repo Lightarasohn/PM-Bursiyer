@@ -181,7 +181,7 @@ const DraggableAntdTable = ({
   
   // Edit konfigürasyonu için default değerler
   const defaultEditConfig = {
-    title: localizeThis("editTitle"),
+    title: "", // Başlık boş olarak ayarlandı
     buttonText: localizeThis("editButtonText"),
     buttonType: "default",
     buttonSize: "small",
@@ -194,7 +194,7 @@ const DraggableAntdTable = ({
 
   // Delete konfigürasyonu için default değerler
   const defaultDeleteConfig = {
-    title: localizeThis("deleteTitle"),
+    title: "", // Başlık boş olarak ayarlandı
     buttonText: localizeThis("deleteButtonText"),
     buttonType: "default",
     buttonSize: "small",
@@ -215,48 +215,15 @@ const DraggableAntdTable = ({
     key: "edit",
     width: defaultEditConfig.width,
     fixed: defaultEditConfig.fixed ? "left" : false,
-    align: "center",
+    align: "center", // Center alignment eklendi
     render: (_, record, index) => (
-      <Button
-        type={defaultEditConfig.buttonType}
-        size={defaultEditConfig.buttonSize}
-        danger={defaultEditConfig.buttonDanger}
-        icon={defaultEditConfig.icon}
-        onClick={() => onEdit && onEdit(record, index)}
-        loading={false}
-        style={{ 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center", 
-          minWidth: "32px",
-          padding: "4px 6px"
-        }}
-      >
-        {!defaultEditConfig.icon && defaultEditConfig.buttonText}
-      </Button>
-    ),
-  });
-
-  // Delete kolonunu oluştur
-  const createDeleteColumn = () => ({
-    title: defaultDeleteConfig.title,
-    key: "delete",
-    width: defaultDeleteConfig.width,
-    fixed: defaultDeleteConfig.fixed ? "right" : false,
-    align: "center",
-    render: (_, record, index) => (
-      <Popconfirm
-        title={defaultDeleteConfig.confirmTitle}
-        description={defaultDeleteConfig.confirmDescription}
-        onConfirm={() => onDelete && onDelete(record, index)}
-        okText={defaultDeleteConfig.confirmOkText}
-        cancelText={defaultDeleteConfig.confirmCancelText}
-      >
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Button
-          type={defaultDeleteConfig.buttonType}
-          size={defaultDeleteConfig.buttonSize}
-          danger={defaultDeleteConfig.buttonDanger}
-          icon={defaultDeleteConfig.icon}
+          type={defaultEditConfig.buttonType}
+          size={defaultEditConfig.buttonSize}
+          danger={defaultEditConfig.buttonDanger}
+          icon={defaultEditConfig.icon}
+          onClick={() => onEdit && onEdit(record, index)}
           loading={false}
           style={{ 
             display: "flex", 
@@ -266,9 +233,46 @@ const DraggableAntdTable = ({
             padding: "4px 6px"
           }}
         >
-          {!defaultDeleteConfig.icon && defaultDeleteConfig.buttonText}
+          {!defaultEditConfig.icon && defaultEditConfig.buttonText}
         </Button>
-      </Popconfirm>
+      </div>
+    ),
+  });
+
+  // Delete kolonunu oluştur
+  const createDeleteColumn = () => ({
+    title: defaultDeleteConfig.title,
+    key: "delete",
+    width: defaultDeleteConfig.width,
+    fixed: defaultDeleteConfig.fixed ? "right" : false,
+    align: "center", // Center alignment eklendi
+    render: (_, record, index) => (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <Popconfirm
+          title={defaultDeleteConfig.confirmTitle}
+          description={defaultDeleteConfig.confirmDescription}
+          onConfirm={() => onDelete && onDelete(record, index)}
+          okText={defaultDeleteConfig.confirmOkText}
+          cancelText={defaultDeleteConfig.confirmCancelText}
+        >
+          <Button
+            type={defaultDeleteConfig.buttonType}
+            size={defaultDeleteConfig.buttonSize}
+            danger={defaultDeleteConfig.buttonDanger}
+            icon={defaultDeleteConfig.icon}
+            loading={false}
+            style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              minWidth: "32px",
+              padding: "4px 6px"
+            }}
+          >
+            {!defaultDeleteConfig.icon && defaultDeleteConfig.buttonText}
+          </Button>
+        </Popconfirm>
+      </div>
     ),
   });
 
@@ -604,7 +608,7 @@ const DraggableAntdTable = ({
     ${className || ''}
   `;
 
-  // CSS styles for enhanced table appearance
+  // CSS styles for enhanced table appearance - Action columns için ek stiller eklendi
   const customTableStyles = `
     .enhanced-table .ant-table-thead > tr > th {
       background: linear-gradient(145deg, #f8f9fa, #e9ecef) !important;
@@ -618,6 +622,17 @@ const DraggableAntdTable = ({
     .enhanced-table .ant-table-tbody > tr > td {
       border: 1px solid #dee2e6 !important;
       transition: background-color 0.2s ease;
+    }
+    
+    /* Action columns için özel center alignment */
+    .enhanced-table .ant-table-tbody > tr > td:first-child,
+    .enhanced-table .ant-table-tbody > tr > td:last-child {
+      text-align: center !important;
+    }
+    
+    .enhanced-table .ant-table-thead > tr > th:first-child,
+    .enhanced-table .ant-table-thead > tr > th:last-child {
+      text-align: center !important;
     }
     
     .enhanced-table .ant-table-tbody > tr:nth-child(even) {

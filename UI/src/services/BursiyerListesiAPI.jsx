@@ -1,7 +1,8 @@
 import { decryptToken } from "../tools/cryptoToken/AES-CBC.js";
 
 const BursiyerListesiAPI = async () => {
-    const url = "http://localhost:5155/api/scholar";
+    const base = import.meta.env.VITE_API_BASE_URL;
+    const url = `${base}api/scholar`;
     const encryptedToken  = localStorage.getItem("userToken");
     const decryptedToken = decryptToken(encryptedToken)
     console.log(decryptedToken)

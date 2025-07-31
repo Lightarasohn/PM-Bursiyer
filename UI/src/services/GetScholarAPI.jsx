@@ -1,5 +1,6 @@
 const GetScholarAPI = async (id) => {
-    const url = `http://localhost:5155/api/scholar/${id}`;
+    const base = import.meta.env.VITE_API_BASE_URL;
+    const url = `${base}api/scholar/${id}`;
     var requestOptions = {
      
         method: "GET"

@@ -1,6 +1,6 @@
-const GetAllAcademicianAPI = async () => {
+const GetScholarPeriodDocuments = async (scholarId , termId) => {
      const base = import.meta.env.VITE_API_BASE_URL;
-    const url = `${base}api/academician`;
+    const url = `${base}api/term-scholar-document/by-scholar-term/${scholarId}/${termId}`;
     var requestOptions = {
      
         method: "GET"
@@ -12,4 +12,4 @@ const GetAllAcademicianAPI = async () => {
     .catch((e) => {console.log(e); return undefined});
 }
 
-export default GetAllAcademicianAPI;
+export default GetScholarPeriodDocuments;

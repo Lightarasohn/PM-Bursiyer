@@ -114,12 +114,50 @@ namespace API.Repositories
             return terms;
         }
 
+        public async Task<IEnumerable<Term>> GetAllTermsByScholarId(int scholarId)
+        {
+            _logger.LogInformation("GetAllTermsByScholarId executing");
+
+            var termIds = await _context.TermsOfScholars
+                .Where(ts => ts.ScholarId == scholarId && !ts.Deleted)
+                .Select(ts => ts.TermId)
+                .ToListAsync();
+
+            if (termIds == null || !termIds.Any())
+                throw new Exception($"Scholar ID {scholarId} için herhangi bir dönem bulunamadı.");
+
+            var terms = await _context.Terms
+                .Where(t => termIds.Contains(t.Id) && !t.Deleted)
+                .ToListAsync();
+
+            return terms;
+        }
+
         public async Task<Term> GetTermByIdAsync(int id)
         {
             _logger.LogInformation("GetTermByIdAsync executing");
 
             Term term = await _context.Terms.FirstOrDefaultAsync(t => t.Id == id && !t.Deleted)
                 ?? throw new Exception($"Term with id: {id} not found");
+            return term;
+        }
+
+        public async Task<Term> GetTermByScholarId(int scholarId)
+        {
+            _logger.LogInformation("GetTermByScholarId executing");
+
+            var termOfScholar = await _context.TermsOfScholars
+                .FirstOrDefaultAsync(t => t.ScholarId == scholarId && !t.Deleted);
+
+            if (termOfScholar == null)
+                throw new Exception($"TermOfScholar kaydı scholar id {scholarId} için bulunamadı.");
+
+            var term = await _context.Terms
+                .FirstOrDefaultAsync(t => t.Id == termOfScholar.TermId && !t.Deleted);
+
+            if (term == null)
+                throw new Exception($"Term kaydı term id {termOfScholar.TermId} için bulunamadı.");
+
             return term;
         }
 

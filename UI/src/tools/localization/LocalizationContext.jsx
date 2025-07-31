@@ -15,8 +15,9 @@ export const LocalizationProvider = ({ children }) => {
     if (language) {
       localStorage.setItem("lang", language);
       setIsLoading(true);
-      
-      fetch(`http://localhost:5155/api/sozluk/language/${language}`)
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
+    const url = `${baseURL}api/sozluk/language/${language}`;
+      fetch(url)
         .then((res) => res.json())
         .then((data) => {
           const dict = {};

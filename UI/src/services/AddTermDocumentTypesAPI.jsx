@@ -1,6 +1,7 @@
 const AddTermDocumentTypesAPI = async (body) => {
+    const base = import.meta.env.VITE_API_BASE_URL;
+    const url = `${base}api/term-document`;
 
-    const url = `http://localhost:5155/api/term-document`;
     var requestOptions = {
         method: "POST",
         headers: {

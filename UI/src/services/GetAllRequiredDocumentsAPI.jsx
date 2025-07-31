@@ -1,6 +1,7 @@
 const GetAllRequiredDocumentsAPI = async () => {
     const query = "?q=required";
-    const url = `http://localhost:5155/api/system-constant${query}`;
+    const base = import.meta.env.VITE_API_BASE_URL;
+    const url = `${base}api/system-constant${query}`;
     var requestOptions = {
      
         method: "GET"

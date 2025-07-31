@@ -252,6 +252,7 @@ namespace API.Repositories
 
             IEnumerable<TermsOfScholarsDocument> termsOfScholarsDocuments = await _context.TermsOfScholarsDocuments
                 .Where(ts => ts.ScholarId == scholarId && ts.TermId == termId && !ts.Deleted)
+                .Include(ts => ts.DocumentType)
                 .ToListAsync();
 
             return termsOfScholarsDocuments;

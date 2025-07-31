@@ -1,6 +1,6 @@
 const AddTermOfScholarDocumentsAPI = async (body) => {
-
-    const url = `http://localhost:5155/api/scholar-service/add-scholar`;
+    const base = import.meta.env.VITE_API_BASE_URL;
+    const url = `${base}api/scholar-service/add-scholar`;
     var requestOptions = {
         method: "POST",
         headers: {

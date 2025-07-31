@@ -11,6 +11,8 @@ namespace API.Interfaces
     {
         Task<IEnumerable<Term>> GetAllTermsAsync();
         Task<Term> GetTermByIdAsync(int id);
+        Task<Term> GetTermByScholarId(int scholarId);
+        Task<IEnumerable<Term>> GetAllTermsByScholarId(int scholarId);
         Task<Term> AddTermAsync(TermDTO termDto);
         Term AddTerm(TermDTO termDTO, bool SAVE_CHANGES);
         Task<Term> UpdateTermAsync(TermDTO termDto, int id);
