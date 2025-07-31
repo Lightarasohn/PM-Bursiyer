@@ -57,10 +57,12 @@ const ScholarInfo = () => {
   const [entryModalVisible, setEntryModalVisible] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const [activeTabKey, setActiveTabKey] = useState("1");
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalUrl, setModalUrl] = useState('');
   const [currentRecord, setCurrentRecord] = useState(null);
+  const [isDocumentAddModalVisible, setIsDocumentAddModalVisible] = useState(false);
 
+  const [isModalVisible, setIsModalVisible] = useState(true);
+  const [documentModalProps, setDocumentModalProps] = useState(null);
   // Utility functions
   const formatDate = useCallback((dateString) => {
     if (!dateString) return "Belirtilmemiş";
@@ -184,26 +186,38 @@ const ScholarInfo = () => {
     }
   }, [getScholarIdFromUrl]);
 
-  const handleEdit = useCallback((record) => {
-    if (!isScholarStarted()) {
-      message.warning("Bursiyerin dönemi henüz başlamadığı için doküman düzenleme yapılamaz.");
-      return;
+ const handleEdit = useCallback((record) => {
+  if (!isScholarStarted()) {
+    message.warning("Bursiyerin dönemi henüz başlamadığı için doküman düzenleme yapılamaz.");
+    return;
+  }
+
+  const documentTypeId = record.documentTypeId || 0;
+  const recordId = record.id;
+  const scholarId = getScholarIdFromUrl();
+
+  setDocumentModalProps({
+    title: "Proje Dökümanları",
+    moduleType: "project",
+    allowedFileTypes: [".pdf", ".doc", ".docx"],
+    maxFileSize: 5,
+    documentTypeId,     // 🔁 eklenen alan
+    recordId,           // 🔁 eklenen alan
+    scholarId,          // 🔁 eklenen alan
+    customFields: {
+      projectPhase: {
+        type: "select",
+        label: "Proje Fazı",
+        options: [
+          { value: "planning", label: "Planlama" },
+          { value: "development", label: "Geliştirme" }
+        ]
+      }
     }
+  });
 
-    const documentTypeId = record.documentTypeId || 0;
-    const recordId = record.id;
-    const scholarId = getScholarIdFromUrl();
-    // Modal için URL oluşturma
-    const modalUrl = `/Forms/Documents/uploadedDocuments.aspx?isPopup=true&hideSrc=true&requestingFormType=6` +
-      `&requesterID=${encodeURIComponent(recordId)}` +
-      `&documentTypeID=${encodeURIComponent(documentTypeId)}` +
-      `&scholarID=${encodeURIComponent(scholarId)}`;
-
-    // Modal state'lerini güncelle
-    setCurrentRecord(record);
-    setModalUrl(modalUrl);
-    setIsModalVisible(true);
-  }, [isScholarStarted, getScholarIdFromUrl]);
+  setIsModalVisible(true);
+}, [isScholarStarted, getScholarIdFromUrl]);
 
   const handleModalClose = useCallback(() => {
     setIsModalVisible(false);
@@ -746,8 +760,18 @@ const ScholarInfo = () => {
           </Button>
         </div>
       </Modal>
+      {isDocumentAddModalVisible && documentModalProps && (
+  <DocumentAddModalGlobal
+    visible={true}
+    onCancel={() => setIsDocumentAddModalVisible(false)}
+    onOk={handleDocumentsAdded}
+    {...documentModalProps}
+  />
+)}
     </div>
+    
   );
+  
 };
 
 export default ScholarInfo;

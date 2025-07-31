@@ -1,5 +1,4 @@
 import { Button } from "antd";
-import DocumentAntdTable from "../../reusableComponents/DocumentAntdTable";
 import DocumentAddModalGlobal from "../../reusableComponents/DocumentAddModalGlobal";
 import { useState } from "react";
 
