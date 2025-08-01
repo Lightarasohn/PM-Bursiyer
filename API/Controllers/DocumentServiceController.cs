@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using API.DTOs.AcademicianDTOs;
 using API.DTOs.DocumentDTO;
 using API.DTOs.DocumentDTOs;
@@ -37,6 +38,17 @@ namespace API.Controllers
             {
                 return BadRequest($"Bir Hata Oluştu: {ex.Message}");
             }
+        }
+        [HttpGet("download")]
+        public IActionResult DownloadFile([FromQuery] string filename)
+        {
+            string decodedFilename = HttpUtility.UrlDecode(filename);
+            var fileResult = _documentService.GetFile(decodedFilename);
+
+            if (fileResult == null)
+                return NotFound("Dosya bulunamadı veya geçersiz.");
+
+            return File(fileResult.Value.FileContents, fileResult.Value.ContentType, fileResult.Value.FileName);
         }
     }
 }

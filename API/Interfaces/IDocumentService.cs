@@ -13,6 +13,7 @@ namespace API.Interfaces
     {
         Task<Document> AddDocumentPhsically(DocumentAddDTO documentAddDTO);
         Task LinkDocumentToTarget(int docSource, int sourceTableId, int docTypeId, int documentId);
+        (byte[] FileContents, string ContentType, string FileName)? GetFile(string filename);
 
     }
 }

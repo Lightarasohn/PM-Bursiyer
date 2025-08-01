@@ -9,6 +9,7 @@ using API.Data;
 using API.DTOs.DocumentDTOs;
 using API.Interfaces;
 using API.Models;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Options;
 
 namespace API.Services
@@ -19,12 +20,14 @@ namespace API.Services
         private readonly PostgresContext _context;
         private readonly IConfiguration _config;
         private string? _serverUrl;
-        public DocumentService(IDocumentRepository documentRepository, PostgresContext context,IConfiguration config)
+        private readonly string _fileDirectory;
+        public DocumentService(IDocumentRepository documentRepository, PostgresContext context, IConfiguration config)
         {
             _documentRepository = documentRepository;
             _context = context;
             _config = config;
             _serverUrl = _config["Kestrel:Endpoints:Https:Url"];
+            _fileDirectory = Path.Combine(Directory.GetCurrentDirectory(), "UploadedDocuments");
         }
 
         public async Task<Document> AddDocumentPhsically(DocumentAddDTO dto)
@@ -65,6 +68,25 @@ namespace API.Services
 
             return addedDoc;
         }
+
+        public (byte[] FileContents, string ContentType, string FileName)? GetFile(string filename)
+        {
+            if (string.IsNullOrWhiteSpace(filename) || filename.Contains("..") || Path.IsPathRooted(filename))
+                return null;
+
+            var filePath = Path.Combine(_fileDirectory, filename);
+            if (!File.Exists(filePath))
+                return null;
+
+            var provider = new FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(filePath, out var contentType))
+                contentType = "application/octet-stream";
+
+            var fileBytes = File.ReadAllBytes(filePath);
+
+            return (fileBytes, contentType, filename);
+        }
+
         public async Task LinkDocumentToTarget(int docSource, int sourceTableId, int docTypeId, int documentId)
         {
             switch (docSource)

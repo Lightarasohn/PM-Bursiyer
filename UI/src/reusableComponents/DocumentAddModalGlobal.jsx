@@ -246,13 +246,9 @@ const DocumentManagementModal = ({
 
 
   const handleDownloadDocument = (record) => {
-  const fileUrl = record.document?.fullPath;
+  const fileNameEncoded = encodeURIComponent(record.document?.path || "");
+  const fileUrl = `https://localhost:5156/api/documentService/download?filename=${fileNameEncoded}`;
   const fileName = record.document?.docName || "dosya";
-
-  if (!fileUrl) {
-    message.error("Dosya yolu bulunamadı.");
-    return;
-  }
 
   const link = document.createElement("a");
   link.href = fileUrl;
