@@ -95,6 +95,20 @@ namespace API.Controllers
             }
         }
 
+        [HttpPost("real-upload-date/{scholarId}/{termId}/{documentTypeId}/{listType}/{isRealUploadDate}")]
+        public async Task<IActionResult> ChangeRealUploadDate(int scholarId, int termId, int documentTypeId, string listType, bool isRealUploadDate)
+        {
+            try
+            {
+                var updated = await _repository.ChangeRealUploadDateAsync(scholarId, termId, documentTypeId, listType, isRealUploadDate);
+                return Ok(updated);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Güncelleme başarısız: {ex.Message}");
+            }
+        }
+
         [HttpPut("{scholarId}/{termId}/{documentTypeId}")]
         public async Task<IActionResult> Update([FromBody] TermsOfScholarsDocumentDTO dto, int scholarId, int termId, int documentTypeId)
         {

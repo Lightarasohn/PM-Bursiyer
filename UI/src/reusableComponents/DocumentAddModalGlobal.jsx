@@ -41,6 +41,8 @@ const DocumentManagementModal = ({
   maxFileSize = 10,
   localizeThis = (key) => key,
   onRefresh,
+  scholarId,
+  termId,
 }) => {
   const [documents, setDocuments] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -120,6 +122,13 @@ const DocumentManagementModal = ({
   const handleFileChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
   };
+
+  const changeRealUploadDate = async () => {
+    const response = await fetch("https://localhost:5156/api/term-scholar-document", {
+        method: "",
+        body: formData,
+      });
+  }
 
   const handleAddDocument = async (values) => {
     try {
@@ -247,6 +256,7 @@ const DocumentManagementModal = ({
 
   const handleDownloadDocument = (record) => {
   const fileNameEncoded = encodeURIComponent(record.document?.path || "");
+  console.log("Encoded file name:", fileNameEncoded);
   const fileUrl = `https://localhost:5156/api/documentService/download?filename=${fileNameEncoded}`;
   const fileName = record.document?.docName || "dosya";
 

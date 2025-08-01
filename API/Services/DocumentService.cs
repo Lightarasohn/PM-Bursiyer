@@ -51,12 +51,13 @@ namespace API.Services
             string extension = Path.GetExtension(dto.DocName);
             string finalFileName = $"{nameWithoutExt}{extension}";
             string path = Path.Combine(uploadFolder, finalFileName);
+            string normalizedPath = path.Replace("\\", "/");
             string fullPath = Path.Combine(_serverUrl,path);
 
-            dto.Path = Path.Combine(uploadFolder, finalFileName).Replace("\\", "/");
+            dto.Path = Path.Combine(folderName, finalFileName).Replace("\\", "/");
             dto.FullPath = fullPath.Replace("\\", "/");
             var addedDoc = await _documentRepository.AddDocumentAsync(dto); 
-            using (var stream = new FileStream(dto.Path, FileMode.Create))
+            using (var stream = new FileStream(normalizedPath, FileMode.Create))
             {
                 await dto.FileContent.CopyToAsync(stream);
             }
