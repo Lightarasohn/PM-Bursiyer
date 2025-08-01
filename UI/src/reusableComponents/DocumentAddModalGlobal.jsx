@@ -229,42 +229,7 @@ const DocumentManagementModal = ({
   };
 
   // Doküman önizleme
-  const handlePreviewDocument = async (record) => {
-    try {
-      const response = await fetch(`/api/documents/preview/${record.id}`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-      }
-    } catch (error) {
-      console.error("Doküman önizleme hatası:", error);
-      message.error("Doküman önizlenirken bir hata oluştu!");
-    }
-  };
-
-  // Doküman indirme
-  const handleDownloadDocument = async (record) => {
-    try {
-      const response = await fetch(`/api/documents/download/${record.id}`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = record.fileName || record.title;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error("Doküman indirme hatası:", error);
-      message.error("Doküman indirilirken bir hata oluştu!");
-    }
-  };
-
-  // Ana modal onay
+ 
   const handleMainModalOk = () => {
     if (onOk) {
       onOk(documents);
@@ -279,6 +244,23 @@ const DocumentManagementModal = ({
     setFileList([]);
   };
 
+
+  const handleDownloadDocument = (record) => {
+  const fileUrl = record.document?.fullPath;
+  const fileName = record.document?.docName || "dosya";
+
+  if (!fileUrl) {
+    message.error("Dosya yolu bulunamadı.");
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.href = fileUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
   // Tablo kolonları
  const columns = [
   {
@@ -286,7 +268,7 @@ const DocumentManagementModal = ({
     dataIndex: ["document", "title"],
     key: "title",
     ellipsis: true,
-    render: (text, record) => (
+    render: (text) => (
       <Space>
         <FileOutlined style={{ color: '#1890ff' }} />
         <span title={text}>{text}</span>
@@ -304,15 +286,9 @@ const DocumentManagementModal = ({
     key: "documentTypeName",
     width: 150,
     render: (_, record) => {
-      // Örneğin docTypeId -> İsim eşlemesi
-      const typeMap = {
-        1: "Kimlik Belgesi",
-        2: "Transkript",
-        3: "Öğrenci Belgesi",
-        // ... ihtiyaç halinde güncelle
-      };
+      
       const docTypeId = record.document?.docTypeId;
-      return typeMap[docTypeId] || "Belirtilmemiş";
+      return docTypeId || "Belirtilmemiş";
     },
   },
   
@@ -335,21 +311,14 @@ const DocumentManagementModal = ({
     fixed: "right",
     render: (_, record) => (
       <Space size="small">
-        <Button
-          type="primary"
-          ghost
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => handlePreviewDocument(record)}
-          title="Önizle"
-        />
-        <Button
-          type="default"
-          size="small"
-          icon={<DownloadOutlined />}
-          onClick={() => handleDownloadDocument(record)}
-          title="İndir"
-        />
+        
+       <Button
+  type="default"
+  size="small"
+  icon={<DownloadOutlined />}
+  onClick={() => handleDownloadDocument(record)}
+  title="İndir"
+/>
         <Button
           type="primary"
           danger
@@ -358,6 +327,7 @@ const DocumentManagementModal = ({
           onClick={() => handleDeleteDocument(record)}
           title="Sil"
         />
+        
       </Space>
     ),
   },
