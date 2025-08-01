@@ -11,6 +11,8 @@ public partial class TermDocumentType
 
     public string ListType { get; set; } = null!;
 
+    public bool? Deleted { get; set; }
+
     public virtual DocumentType DocumentType { get; set; } = null!;
 
     public virtual Term Term { get; set; } = null!;

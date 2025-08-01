@@ -210,6 +210,9 @@ public partial class PostgresContext : DbContext
             entity.ToTable("SOZLUK");
 
             entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Deleted)
+                .HasDefaultValue(false)
+                .HasColumnName("DELETED");
             entity.Property(e => e.Dil)
                 .HasMaxLength(50)
                 .HasColumnName("DIL");
@@ -272,6 +275,9 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.ListType)
                 .HasColumnType("character varying")
                 .HasColumnName("LIST_TYPE");
+            entity.Property(e => e.Deleted)
+                .HasDefaultValue(false)
+                .HasColumnName("DELETED");
 
             entity.HasOne(d => d.DocumentType).WithMany(p => p.TermDocumentTypes)
                 .HasForeignKey(d => d.DocumentTypeId)

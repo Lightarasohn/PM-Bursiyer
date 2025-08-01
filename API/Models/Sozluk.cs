@@ -14,4 +14,6 @@ public partial class Sozluk
     public string? KullanilanSayfa { get; set; }
 
     public string? Dil { get; set; }
+
+    public bool? Deleted { get; set; }
 }

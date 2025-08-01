@@ -56,7 +56,7 @@ namespace API.Repositories
             _logger.LogInformation("DeleteTermDocumentTypeAsync executing");
 
             var entity = await GetTermDocumentTypeByIdAsync(termId, documentTypeId);
-            _context.TermDocumentTypes.Remove(entity);
+            entity.Deleted = true; 
             await _context.SaveChangesAsync();
             return entity;
         }

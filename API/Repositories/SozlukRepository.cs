@@ -36,7 +36,7 @@ namespace API.Repositories
         {
             _logger.LogInformation("DeleteValueAsync executing");
             var sozluk = await GetValueByIdAsync(id);
-            _context.Remove(sozluk);
+            sozluk.Deleted = true;
             await _context.SaveChangesAsync();
             return sozluk;
         }
