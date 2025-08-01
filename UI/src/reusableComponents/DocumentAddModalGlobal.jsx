@@ -8,60 +8,93 @@ import {
   EyeOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
-import DraggableAntdTable from "./DraggableAntdTable"; // Ekteki component
+import DraggableAntdTable from "./DraggableAntdTable";
 
 const { Option } = Select;
 
 /**
- * DocumentAddModalGlobal Component
+ * DocumentManagementModal Component
  * @param {Object} props - Component props
  * @param {boolean} props.visible - Modal görünürlük durumu
  * @param {Function} props.onCancel - Modal kapatma callback'i
  * @param {Function} props.onOk - Modal onay callback'i (documents) => void
- * @param {string} [props.title="Döküman Yönetimi"] - Modal başlığı
+ * @param {string} [props.title="Doküman Yönetimi"] - Modal başlığı
  * @param {number} [props.width=1200] - Modal genişliği
- * @param {string} [props.moduleType="document"] - Modül tipi (document, scholar, project, academician)
+ * @param {string} props.moduleType - Modül tipi (scholar, project, etc.)
+ * @param {number} props.recordId - İlgili kayıt ID'si
+ * @param {number} [props.documentTypeId] - Doküman türü ID'si
  * @param {Array} [props.allowedFileTypes] - İzin verilen dosya tipleri
  * @param {number} [props.maxFileSize=10] - Maximum dosya boyutu (MB)
- * @param {boolean} [props.multiple=true] - Çoklu dosya seçimi
- * @param {Object} [props.customFields] - Özel form alanları
  * @param {Function} [props.localizeThis] - Çeviri fonksiyonu
- * @param {boolean} [props.showPreview=true] - Önizleme özelliği
- * @param {boolean} [props.showDownload=true] - İndirme özelliği
- * @param {Function} [props.onPreview] - Önizleme callback'i
- * @param {Function} [props.onDownload] - İndirme callback'i
- * @param {Object} [props.tableProps] - Tablo için ek özellikler
+ * @param {Function} [props.onRefresh] - Liste yenileme callback'i
  */
-const DocumentAddModalGlobal = ({
+const DocumentManagementModal = ({
   visible,
   onCancel,
   onOk,
-  title = "Döküman Yönetimi",
+  title = "Doküman Yönetimi",
   width = 1200,
-  moduleType = "document",
-  allowedFileTypes = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png"],
+  moduleType,
+  recordId,
+  documentTypeId,
+  allowedFileTypes = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"],
   maxFileSize = 10,
-  multiple = true,
-  customFields = {},
   localizeThis = (key) => key,
-  showPreview = true,
-  showDownload = true,
-  onPreview,
-  onDownload,
-  tableProps = {},
+  onRefresh,
 }) => {
   const [documents, setDocuments] = useState([]);
+  const [documentTypes, setDocumentTypes] = useState([]);
   const [addDocumentModalVisible, setAddDocumentModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fileList, setFileList] = useState([]); // Dosya listesi state'i ekledik
 
-  // Modal açıldığında tabloyu sıfırla
+  // Modal açıldığında verileri yükle
   useEffect(() => {
     if (visible) {
-      setDocuments([]);
-      form.resetFields();
+      loadDocuments();
+      loadDocumentTypes();
     }
-  }, [visible, form]);
+  }, [visible, moduleType, recordId]);
+
+  // Dokümanları yükle
+  const loadDocuments = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`https://localhost:5156/api/scholar-document/${recordId}/${documentTypeId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data || []);
+      }
+    } catch (error) {
+      console.error("Doküman listesi yüklenirken hata:", error);
+      message.error("Doküman listesi yüklenemedi");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Doküman türlerini yükle
+  const loadDocumentTypes = async () => {
+    try {
+      const response = await fetch(`https://localhost:5156/api/document-type`);
+      if (response.ok) {
+        const data = await response.json();
+        setDocumentTypes(data || []);
+        console.log(data)
+      }
+    } catch (error) {
+      console.error("Doküman türleri yüklenirken hata:", error);
+      // Varsayılan türler
+      setDocumentTypes([
+        { id: 1, name: "Genel Doküman" },
+        { id: 2, name: "Rapor" },
+        { id: 3, name: "Sunum" },
+        { id: 4, name: "Diğer" }
+      ]);
+    }
+  };
 
   // Dosya upload öncesi validasyon
   const beforeUpload = (file) => {
@@ -71,108 +104,163 @@ const DocumentAddModalGlobal = ({
     
     if (!isValidType) {
       message.error(`Sadece ${allowedFileTypes.join(", ")} formatları desteklenmektedir!`);
-      return false;
+      return Upload.LIST_IGNORE;
     }
 
     const isValidSize = file.size / 1024 / 1024 < maxFileSize;
     if (!isValidSize) {
       message.error(`Dosya boyutu ${maxFileSize}MB'dan küçük olmalıdır!`);
-      return false;
+      return Upload.LIST_IGNORE;
     }
 
     return false; // Upload'u manuel olarak kontrol edeceğiz
   };
 
-  // Dosya seçildiğinde
-  const handleFileSelect = (info) => {
-    const { fileList } = info;
-    // Seçilen dosyaları form state'ine kaydet
-    form.setFieldsValue({ files: fileList });
+  // Dosya değişimi işleyicisi
+  const handleFileChange = ({ fileList: newFileList }) => {
+    setFileList(newFileList);
   };
 
-  // Yeni döküman ekleme
   const handleAddDocument = async (values) => {
     try {
       setUploading(true);
       
-      const { files, documentName, description, category, tags, ...otherFields } = values;
-      
-      if (!files || files.length === 0) {
-        message.error("Lütfen en az bir dosya seçin!");
+      console.log("Form values:", values);
+      console.log("Modüle Type", moduleType);
+      console.log("File list:", fileList);
+
+      // Dosya kontrolü
+      if (!fileList || fileList.length === 0) {
+        message.error("Lütfen bir dosya seçin!");
         return;
       }
 
-      // Her dosya için döküman objesi oluştur
-      const newDocuments = files.map((file, index) => {
-        const docId = `doc_${Date.now()}_${index}`;
-        return {
-          id: docId,
-          key: docId,
-          documentName: documentName || file.name,
-          fileName: file.name,
-          fileSize: (file.size / 1024 / 1024).toFixed(2) + " MB",
-          fileType: file.name.split('.').pop().toUpperCase(),
-          description: description || "",
-          category: category || "Genel",
-          tags: tags || [],
-          uploadDate: new Date().toLocaleDateString("tr-TR"),
-          moduleType,
-          file: file.originFileObj || file,
-          status: "Yüklendi",
-          ...otherFields
-        };
+      const fileObj = fileList[0].originFileObj || fileList[0];
+      if (!fileObj) {
+        message.error("Dosya bulunamadı!");
+        return;
+      }
+
+      console.log("File object:", fileObj);
+      console.log("File object type:", typeof fileObj);
+      console.log("File object constructor:", fileObj.constructor.name);
+      console.log("File size:", fileObj.size);
+
+      const formData = new FormData();
+
+      // API'nın beklediği alan adlarını kullan
+      formData.append("GrantedRoles", "admin");
+      formData.append("DocName", fileObj.name);
+      formData.append("Path", "");
+      formData.append("DocInfo", values.title || "title");
+      formData.append("DocTypeId", values.documentTypeId?.toString() || "0");
+      formData.append("DocSource", moduleType || 0);
+      formData.append("FullPath", "");
+      formData.append("DocSourceTableId", recordId?.toString() || "0");
+      formData.append("Title", values.title || "title");
+      formData.append("CreUserId", "1");
+      formData.append("Extension", fileObj.name.split('.').pop());
+      
+      // Dosyayı ekle - farklı isimlerle dene
+      formData.append("FileContent", fileObj, fileObj.name);
+      formData.append("file", fileObj, fileObj.name);
+      formData.append("File", fileObj, fileObj.name);
+
+      console.log("FormData entries:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+
+      const response = await fetch("https://localhost:5156/api/documentService", {
+        method: "POST",
+        body: formData,
       });
 
-      // Mevcut dökümanları güncelle
-      setDocuments(prev => [...prev, ...newDocuments]);
-      
-      message.success(`${newDocuments.length} döküman başarıyla eklendi!`);
-      setAddDocumentModalVisible(false);
-      form.resetFields();
-      
+      console.log("Response status:", response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Başarılı yükleme:", result);
+        message.success("Doküman başarıyla yüklendi!");
+        
+        // Form ve state'leri temizle
+        form.resetFields();
+        setFileList([]);
+        setAddDocumentModalVisible(false);
+        
+        // Listeyi yenile
+        loadDocuments();
+        onRefresh?.();
+      } else {
+        const errorText = await response.text();
+        console.error("Hata yanıtı:", errorText);
+        message.error("Yükleme başarısız: " + errorText);
+      }
+
     } catch (error) {
-      console.error("Döküman ekleme hatası:", error);
-      message.error("Döküman eklenirken bir hata oluştu!");
+      console.error("İstek hatası:", error);
+      message.error("Sunucuya bağlanırken hata oluştu: " + error.message);
     } finally {
       setUploading(false);
     }
   };
 
-  // Döküman silme
-  const handleDeleteDocument = (record) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== record.id));
-    message.success("Döküman silindi!");
-  };
+  // Doküman silme
+  const handleDeleteDocument = async (record) => {
+    try {
+      const response = await fetch(`/api/documents/delete/${record.id}`, {
+        method: 'DELETE',
+      });
 
-  // Döküman önizleme
-  const handlePreviewDocument = (record) => {
-    if (onPreview) {
-      onPreview(record);
-    } else {
-      // Varsayılan önizleme davranışı
-      if (record.file) {
-        const url = URL.createObjectURL(record.file);
-        window.open(url, '_blank');
+      if (response.ok) {
+        message.success("Doküman silindi!");
+        loadDocuments();
+        
+        if (onRefresh) {
+          onRefresh();
+        }
+      } else {
+        throw new Error("Delete failed");
       }
+    } catch (error) {
+      console.error("Doküman silme hatası:", error);
+      message.error("Doküman silinirken bir hata oluştu!");
     }
   };
 
-  // Döküman indirme
-  const handleDownloadDocument = (record) => {
-    if (onDownload) {
-      onDownload(record);
-    } else {
-      // Varsayılan indirme davranışı
-      if (record.file) {
-        const url = URL.createObjectURL(record.file);
+  // Doküman önizleme
+  const handlePreviewDocument = async (record) => {
+    try {
+      const response = await fetch(`/api/documents/preview/${record.id}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      }
+    } catch (error) {
+      console.error("Doküman önizleme hatası:", error);
+      message.error("Doküman önizlenirken bir hata oluştu!");
+    }
+  };
+
+  // Doküman indirme
+  const handleDownloadDocument = async (record) => {
+    try {
+      const response = await fetch(`/api/documents/download/${record.id}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = record.fileName;
+        link.download = record.fileName || record.title;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }
+    } catch (error) {
+      console.error("Doküman indirme hatası:", error);
+      message.error("Doküman indirilirken bir hata oluştu!");
     }
   };
 
@@ -184,173 +272,107 @@ const DocumentAddModalGlobal = ({
     onCancel();
   };
 
-  // Tablo kolonları
-  const columns = [
-    {
-      title: "Döküman Adı",
-      dataIndex: "documentName",
-      key: "documentName",
-      ellipsis: true,
-      render: (text, record) => (
-        <Space>
-          <FileOutlined style={{ color: '#1890ff' }} />
-          <span title={text}>{text}</span>
-        </Space>
-      ),
-    },
-    {
-      title: "Dosya Adı",
-      dataIndex: "fileName",
-      key: "fileName",
-      ellipsis: true,
-    },
-    {
-      title: "Dosya Tipi",
-      dataIndex: "fileType",
-      key: "fileType",
-      width: 100,
-      align: "center",
-      render: (text) => (
-        <span style={{ 
-          backgroundColor: '#f0f0f0', 
-          padding: '2px 8px', 
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontWeight: 'bold'
-        }}>
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: "Boyut",
-      dataIndex: "fileSize",
-      key: "fileSize",
-      width: 100,
-      align: "center",
-    },
-    {
-      title: "Kategori",
-      dataIndex: "category",
-      key: "category",
-      width: 120,
-    },
-    {
-      title: "Açıklama",
-      dataIndex: "description",
-      key: "description",
-      ellipsis: true,
-    },
-    {
-      title: "Yükleme Tarihi",
-      dataIndex: "uploadDate",
-      key: "uploadDate",
-      width: 120,
-      align: "center",
-    },
-    {
-      title: "İşlemler",
-      key: "actions",
-      width: 150,
-      align: "center",
-      fixed: "right",
-      render: (_, record) => (
-        <Space size="small">
-          {showPreview && (
-            <Button
-              type="primary"
-              ghost
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => handlePreviewDocument(record)}
-              title="Önizle"
-            />
-          )}
-          {showDownload && (
-            <Button
-              type="default"
-              size="small"
-              icon={<DownloadOutlined />}
-              onClick={() => handleDownloadDocument(record)}
-              title="İndir"
-            />
-          )}
-          <Button
-            type="primary"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => handleDeleteDocument(record)}
-            title="Sil"
-          />
-        </Space>
-      ),
-    },
-  ];
-
-  // Özel alanları form'a ekle
-  const renderCustomFields = () => {
-    return Object.keys(customFields).map(fieldKey => {
-      const field = customFields[fieldKey];
-      
-      switch (field.type) {
-        case 'select':
-          return (
-            <Form.Item
-              key={fieldKey}
-              name={fieldKey}
-              label={field.label}
-              rules={field.rules}
-            >
-              <Select placeholder={field.placeholder}>
-                {field.options?.map(option => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          );
-        case 'textarea':
-          return (
-            <Form.Item
-              key={fieldKey}
-              name={fieldKey}
-              label={field.label}
-              rules={field.rules}
-            >
-              <Input.TextArea 
-                placeholder={field.placeholder} 
-                rows={field.rows || 3}
-              />
-            </Form.Item>
-          );
-        default:
-          return (
-            <Form.Item
-              key={fieldKey}
-              name={fieldKey}
-              label={field.label}
-              rules={field.rules}
-            >
-              <Input placeholder={field.placeholder} />
-            </Form.Item>
-          );
-      }
-    });
+  // Modal kapatma işleyicisi
+  const handleAddModalCancel = () => {
+    setAddDocumentModalVisible(false);
+    form.resetFields();
+    setFileList([]);
   };
+
+  // Tablo kolonları
+ const columns = [
+  {
+    title: "Başlık",
+    dataIndex: ["document", "title"],
+    key: "title",
+    ellipsis: true,
+    render: (text, record) => (
+      <Space>
+        <FileOutlined style={{ color: '#1890ff' }} />
+        <span title={text}>{text}</span>
+      </Space>
+    ),
+  },
+  {
+    title: "Dosya Adı",
+    dataIndex: ["document", "docName"],
+    key: "fileName",
+    ellipsis: true,
+  },
+  {
+    title: "Doküman Türü",
+    key: "documentTypeName",
+    width: 150,
+    render: (_, record) => {
+      // Örneğin docTypeId -> İsim eşlemesi
+      const typeMap = {
+        1: "Kimlik Belgesi",
+        2: "Transkript",
+        3: "Öğrenci Belgesi",
+        // ... ihtiyaç halinde güncelle
+      };
+      const docTypeId = record.document?.docTypeId;
+      return typeMap[docTypeId] || "Belirtilmemiş";
+    },
+  },
+  
+  {
+    title: "Yükleme Tarihi",
+    dataIndex: ["document", "creDate"],
+    key: "uploadDate",
+    width: 140,
+    align: "center",
+    render: (date) => {
+      if (!date) return "N/A";
+      return new Date(date).toLocaleDateString("tr-TR");
+    },
+  },
+  {
+    title: "İşlemler",
+    key: "actions",
+    width: 150,
+    align: "center",
+    fixed: "right",
+    render: (_, record) => (
+      <Space size="small">
+        <Button
+          type="primary"
+          ghost
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => handlePreviewDocument(record)}
+          title="Önizle"
+        />
+        <Button
+          type="default"
+          size="small"
+          icon={<DownloadOutlined />}
+          onClick={() => handleDownloadDocument(record)}
+          title="İndir"
+        />
+        <Button
+          type="primary"
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={() => handleDeleteDocument(record)}
+          title="Sil"
+        />
+      </Space>
+    ),
+  },
+];
+
 
   return (
     <>
       {/* Ana Modal */}
       <Modal
         title={title}
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={handleMainModalOk}
         width={width}
-        style={{ top: 20 }}
-        bodyStyle={{ padding: '20px' }}
         okText="Tamam"
         cancelText="İptal"
         destroyOnClose
@@ -368,7 +390,7 @@ const DocumentAddModalGlobal = ({
               boxShadow: '0 4px 12px rgba(24, 144, 255, 0.3)',
             }}
           >
-            Döküman Ekle
+            Doküman Ekle
           </Button>
         </div>
 
@@ -377,20 +399,19 @@ const DocumentAddModalGlobal = ({
           columns={columns}
           rowKey="id"
           size="small"
-          scroll={{ x: 1200, y: 400 }}
+          scroll={{ x: 1000, y: 400 }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) => 
-              `${range[0]}-${range[1]} / ${total} döküman`,
+              `${range[0]}-${range[1]} / ${total} doküman`,
           }}
           localizeThis={localizeThis}
-          loading={uploading}
-          {...tableProps}
+          loading={loading}
         />
 
-        {documents.length === 0 && (
+        {documents.length === 0 && !loading && (
           <div style={{
             textAlign: 'center',
             padding: '60px 0',
@@ -398,26 +419,23 @@ const DocumentAddModalGlobal = ({
             fontSize: '16px'
           }}>
             <FileOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
-            <div>Henüz döküman eklenmedi</div>
+            <div>Henüz doküman eklenmedi</div>
             <div style={{ fontSize: '14px', marginTop: '8px' }}>
-              Döküman eklemek için yukarıdaki butonu kullanın
+              Doküman eklemek için yukarıdaki butonu kullanın
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Döküman Ekleme Modal'ı */}
+      {/* Doküman Ekleme Modal'ı */}
       <Modal
-        title="Yeni Döküman Ekle"
-        visible={addDocumentModalVisible}
-        onCancel={() => {
-          setAddDocumentModalVisible(false);
-          form.resetFields();
-        }}
+        title="Yeni Doküman Ekle"
+        open={addDocumentModalVisible}
+        onCancel={handleAddModalCancel}
         onOk={() => form.submit()}
-        width={800}
+        width={600}
         confirmLoading={uploading}
-        okText="Ekle"
+        okText="Yükle"
         cancelText="İptal"
         destroyOnClose
       >
@@ -426,21 +444,42 @@ const DocumentAddModalGlobal = ({
           layout="vertical"
           onFinish={handleAddDocument}
           initialValues={{
-            category: "Genel",
-            tags: []
+            documentTypeId: documentTypeId
           }}
         >
           <Form.Item
-            name="files"
+            name="title"
+            label="Başlık"
+            rules={[{ required: true, message: "Lütfen başlık girin!" }]}
+          >
+            <Input placeholder="Doküman başlığı" size="large" />
+          </Form.Item>
+
+          <Form.Item
+            name="documentTypeId"
+            label="Doküman Türü"
+            rules={[{ required: true, message: "Lütfen doküman türü seçin!" }]}
+          >
+            <Select placeholder="Doküman türü seçin" size="large">
+              {documentTypes.map(type => (
+                <Option key={type.id} value={type.id}>
+                  {type.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
             label="Dosya Seçimi"
             rules={[{ required: true, message: "Lütfen dosya seçin!" }]}
           >
             <Upload
-              multiple={multiple}
               beforeUpload={beforeUpload}
-              onChange={handleFileSelect}
-              fileList={form.getFieldValue('files') || []}
+              onChange={handleFileChange}
+              fileList={fileList}
+              maxCount={1}
               accept={allowedFileTypes.join(',')}
+              listType="text"
             >
               <Button icon={<UploadOutlined />} size="large" block>
                 Dosya Seç ({allowedFileTypes.join(", ")})
@@ -448,58 +487,23 @@ const DocumentAddModalGlobal = ({
             </Upload>
           </Form.Item>
 
-          <Divider />
-
-          <Form.Item
-            name="documentName"
-            label="Döküman Adı"
-            rules={[{ required: false }]}
-          >
-            <Input placeholder="Döküman adı (boş bırakılırsa dosya adı kullanılır)" />
-          </Form.Item>
-
-          <Form.Item
-            name="category"
-            label="Kategori"
-            rules={[{ required: true, message: "Lütfen kategori seçin!" }]}
-          >
-            <Select placeholder="Kategori seçin">
-              <Option value="Genel">Genel</Option>
-              <Option value="Rapor">Rapor</Option>
-              <Option value="Sunum">Sunum</Option>
-              <Option value="Döküman">Döküman</Option>
-              <Option value="Görsel">Görsel</Option>
-              <Option value="Diğer">Diğer</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Açıklama"
-          >
-            <Input.TextArea 
-              placeholder="Döküman hakkında açıklama" 
-              rows={3}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="tags"
-            label="Etiketler"
-          >
-            <Select
-              mode="tags"
-              placeholder="Etiketler ekleyin"
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-
-          {/* Özel alanları render et */}
-          {renderCustomFields()}
+          <div style={{ 
+            background: '#f6f6f6', 
+            padding: '12px', 
+            borderRadius: '6px',
+            fontSize: '12px',
+            color: '#666'
+          }}>
+            <strong>Dosya Kuralları:</strong>
+            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+              <li>Maksimum dosya boyutu: {maxFileSize}MB</li>
+              <li>Desteklenen formatlar: {allowedFileTypes.join(", ")}</li>
+            </ul>
+          </div>
         </Form>
       </Modal>
     </>
   );
 };
 
-export default DocumentAddModalGlobal;
+export default DocumentManagementModal;

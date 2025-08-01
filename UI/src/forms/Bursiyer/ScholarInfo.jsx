@@ -29,6 +29,7 @@ import {
   InfoCircleOutlined
 } from '@ant-design/icons';
 import DraggableAntdTable from '../../reusableComponents/DraggableAntdTable';
+import DocumentAddModalGlobal from '../../reusableComponents/DocumentAddModalGlobal';
 import GetScholarAPI from "../../services/GetScholarAPI"
 import GetTermOfScholar from '../../services/GetTermOfScholar';
 import GetAllTermsOfScholar from '../../services/GetAllTermsOfScholar';
@@ -60,9 +61,8 @@ const ScholarInfo = () => {
   const [modalUrl, setModalUrl] = useState('');
   const [currentRecord, setCurrentRecord] = useState(null);
   const [isDocumentAddModalVisible, setIsDocumentAddModalVisible] = useState(false);
-
-  const [isModalVisible, setIsModalVisible] = useState(true);
   const [documentModalProps, setDocumentModalProps] = useState(null);
+
   // Utility functions
   const formatDate = useCallback((dateString) => {
     if (!dateString) return "Belirtilmemiş";
@@ -186,50 +186,63 @@ const ScholarInfo = () => {
     }
   }, [getScholarIdFromUrl]);
 
- const handleEdit = useCallback((record) => {
-  if (!isScholarStarted()) {
-    message.warning("Bursiyerin dönemi henüz başlamadığı için doküman düzenleme yapılamaz.");
-    return;
-  }
-
-  const documentTypeId = record.documentTypeId || 0;
-  const recordId = record.id;
-  const scholarId = getScholarIdFromUrl();
-
-  setDocumentModalProps({
-    title: "Proje Dökümanları",
-    moduleType: "project",
-    allowedFileTypes: [".pdf", ".doc", ".docx"],
-    maxFileSize: 5,
-    documentTypeId,     // 🔁 eklenen alan
-    recordId,           // 🔁 eklenen alan
-    scholarId,          // 🔁 eklenen alan
-    customFields: {
-      projectPhase: {
-        type: "select",
-        label: "Proje Fazı",
-        options: [
-          { value: "planning", label: "Planlama" },
-          { value: "development", label: "Geliştirme" }
-        ]
-      }
+  const handleEdit = useCallback((record) => {
+    if (!isScholarStarted()) {
+      message.warning("Bursiyerin dönemi henüz başlamadığı için doküman düzenleme yapılamaz.");
+      return;
     }
-  });
 
-  setIsModalVisible(true);
-}, [isScholarStarted, getScholarIdFromUrl]);
+    const documentTypeId = record.documentTypeId || 0;
+    const recordId = record.id;
+    const scholarId = getScholarIdFromUrl();
 
-  const handleModalClose = useCallback(() => {
-    setIsModalVisible(false);
-    setModalUrl('');
-    setCurrentRecord(null);
+    // Modal props'ları ayarla
+    setDocumentModalProps({
+      title: "Proje Dökümanları",
+      moduleType: 6,
+      allowedFileTypes: [".pdf", ".doc", ".docx"],
+      maxFileSize: 5,
+      documentTypeId,
+      recordId,
+      scholarId,
+      customFields: {
+        projectPhase: {
+          type: "select",
+          label: "Proje Fazı",
+          options: [
+            { value: "planning", label: "Planlama" },
+            { value: "development", label: "Geliştirme" }
+          ]
+        }
+      }
+    });
+
+    // Modalı aç
+    setIsDocumentAddModalVisible(true);
+  }, [isScholarStarted, getScholarIdFromUrl]);
+
+  const handleDocumentsAdded = useCallback((documents) => {
+    console.log("Eklenen dökümanlar:", documents);
     
-    // Modal kapandığında verileri yenile
+    // Modalı kapat
+    setIsDocumentAddModalVisible(false);
+    setDocumentModalProps(null);
+    
+    // Verileri yenile
     const scholarId = getScholarIdFromUrl();
     if (periodData?.id) {
       fetchPeriodDocuments(scholarId, periodData.id);
     }
+    
+    message.success("Dökümanlar başarıyla eklendi!");
   }, [periodData?.id, getScholarIdFromUrl, fetchPeriodDocuments]);
+
+  const handleModalClose = useCallback(() => {
+    setIsDocumentAddModalVisible(false);
+    setDocumentModalProps(null);
+    setModalUrl('');
+    setCurrentRecord(null);
+  }, []);
 
   const handleDelete = useCallback((record) => {
     console.log("Delete operation:", record);
@@ -443,7 +456,6 @@ const ScholarInfo = () => {
       }
       size="small"
       style={{ marginBottom: '16px' }}
-      bodyStyle={{ padding: '12px' }}
     >
       <Row gutter={[16, 8]}>
         <Col xs={24} sm={12} md={5}>
@@ -544,7 +556,6 @@ const ScholarInfo = () => {
       }
       size="small"
       style={{ marginBottom: '16px' }}
-      bodyStyle={{ padding: '20px', textAlign: 'center' }}
     >
       <div style={{ marginBottom: '20px' }}>
         <Text
@@ -621,7 +632,6 @@ const ScholarInfo = () => {
         </span>
       }
       size="small"
-      bodyStyle={{ padding: '8px' }}
     >
       <Tabs
         activeKey={activeTabKey}
@@ -693,30 +703,6 @@ const ScholarInfo = () => {
         <TabContent />
       </div>
 
-      {/* Document Edit Modal */}
-      <Modal
-        title="Doküman Düzenle"
-        open={isModalVisible}
-        onCancel={handleModalClose}
-        footer={null}
-        width={1200}
-        styles={{ body: { height: '500px', padding: 0 } }}
-        destroyOnClose={true}
-        centered
-      >
-        {modalUrl && (
-          <iframe
-            src={modalUrl}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none'
-            }}
-            title="Document Upload"
-          />
-        )}
-      </Modal>
-
       {/* Entry Documents Modal */}
       <Modal
         title={
@@ -760,18 +746,18 @@ const ScholarInfo = () => {
           </Button>
         </div>
       </Modal>
+
+      {/* DocumentAddModalGlobal - Ana Modal */}
       {isDocumentAddModalVisible && documentModalProps && (
-  <DocumentAddModalGlobal
-    visible={true}
-    onCancel={() => setIsDocumentAddModalVisible(false)}
-    onOk={handleDocumentsAdded}
-    {...documentModalProps}
-  />
-)}
+        <DocumentAddModalGlobal
+          visible={isDocumentAddModalVisible}
+          onCancel={handleModalClose}
+          onOk={handleDocumentsAdded}
+          {...documentModalProps}
+        />
+      )}
     </div>
-    
   );
-  
 };
 
 export default ScholarInfo;
