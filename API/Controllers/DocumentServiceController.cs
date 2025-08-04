@@ -17,10 +17,12 @@ namespace API.Controllers
     public class DocumentServiceController : ControllerBase
     {
         private readonly IDocumentService _documentService;
-        private readonly IDocumentRepository _documentRepository;
-        public DocumentServiceController(IDocumentService documentService)
+        private readonly IScholarshipDocumentDeleteRepository _scholarshipDocumentDeleteRepo;
+
+        public DocumentServiceController(IDocumentService documentService, IScholarshipDocumentDeleteRepository scholarshipDocumentDeleteRepo)
         {
             _documentService = documentService;
+            _scholarshipDocumentDeleteRepo = scholarshipDocumentDeleteRepo;
         }
         [HttpPost]
         public async Task<IActionResult> AddDocumentPhsically([FromForm] DocumentAddDTO documentAddDTO)
@@ -49,6 +51,27 @@ namespace API.Controllers
                 return NotFound("Dosya bulunamadı veya geçersiz.");
 
             return File(fileResult.Value.FileContents, fileResult.Value.ContentType, fileResult.Value.FileName);
+        }
+        [HttpDelete("scholar/{scholarId}/{documentId}")]
+        public async Task<IActionResult> DeleteDocument([FromRoute] int scholarId, [FromRoute] int documentId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var deletedDocument = await _scholarshipDocumentDeleteRepo.DeleteDocumentAsync(scholarId, documentId);
+                if (deletedDocument == null)
+                {
+                    return NotFound("Doküman bulunamadı.");
+                }
+                return Ok(deletedDocument);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Bir Hata Oluştu: {ex.Message}");
+            }
         }
     }
 }

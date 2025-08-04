@@ -236,20 +236,12 @@ const DocumentManagementModal = ({
   const handleDeleteDocument = async (record) => {
     try {
       console.log("Silme işlemi için kayıt:", record);
-      const responseScholarDocument = await fetch(`https://localhost:5156/api/scholar-document/${scholarId}/${record.document.id}`, {
+      const responseScholarDocument = await fetch(`https://localhost:5156/api/documentService/scholar/${scholarId}/${record.document.id}`, {
         method: "DELETE",
       });
 
       if (responseScholarDocument.ok) {
-        const responseTermScholarDocument = await fetch(`https://localhost:5156/api/term-scholar-document/${scholarId}/${termId}/${record.document.docTypeId}`, {
-          method: "DELETE",
-        });
-
-        if (responseTermScholarDocument.ok) {
-          message.success("Doküman silindi!");
-          loadDocuments();
-        }
-
+        
         if (onRefresh) {
           onRefresh();
         }

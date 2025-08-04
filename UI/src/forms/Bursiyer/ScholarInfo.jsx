@@ -53,15 +53,19 @@ const ScholarInfo = () => {
   const [periodData, setPeriodData] = useState(null);
   const [academicianData, setAcademicianData] = useState(null);
   const [periodDocumentsData, setPeriodDocumentsData] = useState([]);
+  const [entryDocumentsData, setEntryDocumentsData] = useState([]);
+  const [exitDocumentsData, setExitDocumentsData] = useState([]);
   const [scholarPeriods, setScholarPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [entryModalVisible, setEntryModalVisible] = useState(false);
-  const [exitModalVisible, setExitModalVisible] = useState(false);
   const [activeTabKey, setActiveTabKey] = useState("1");
   const [modalUrl, setModalUrl] = useState('');
   const [currentRecord, setCurrentRecord] = useState(null);
   const [isDocumentAddModalVisible, setIsDocumentAddModalVisible] = useState(false);
   const [documentModalProps, setDocumentModalProps] = useState(null);
+  
+  // Modal states for document views
+  const [isEntryDocumentsModalVisible, setIsEntryDocumentsModalVisible] = useState(false);
+  const [isExitDocumentsModalVisible, setIsExitDocumentsModalVisible] = useState(false);
 
   // Utility functions
   const formatDate = useCallback((dateString) => {
@@ -94,6 +98,15 @@ const ScholarInfo = () => {
     
     return false;
   }, [periodData]);
+
+  // Filter documents by type
+  const filterDocumentsByType = useCallback((documents, type) => {
+    if (!documents || !Array.isArray(documents)) return [];
+    return documents.filter(doc => {
+      const listType = doc.listType?.toLowerCase();
+      return listType === type.toLowerCase();
+    });
+  }, []);
 
   // API calls
   const fetchScholarData = useCallback(async (scholarId) => {
@@ -141,14 +154,27 @@ const ScholarInfo = () => {
     try {
       const periodDocuments = await GetScholarPeriodDocuments(scholarId, periodId);
       console.log("PeriodDocuments", periodDocuments);
-      setPeriodDocumentsData(periodDocuments || []);
+      
+      const allDocuments = periodDocuments || [];
+      setPeriodDocumentsData(allDocuments);
+      
+      // Filter documents by type
+      const entryDocs = filterDocumentsByType(allDocuments, 'entry');
+      const exitDocs = filterDocumentsByType(allDocuments, 'exit');
+      
+      setEntryDocumentsData(entryDocs);
+      setExitDocumentsData(exitDocs);
+      
+      console.log("Entry Documents:", entryDocs);
+      console.log("Exit Documents:", exitDocs);
+      
       return periodDocuments;
     } catch (error) {
       console.error("Period documents API hatası:", error);
       message.error("Dönem dokümanları alınamadı");
       return [];
     }
-  }, []);
+  }, [filterDocumentsByType]);
 
   const fetchScholarPeriods = useCallback(async (scholarId) => {
     try {
@@ -223,7 +249,7 @@ const ScholarInfo = () => {
 
     // Modalı aç
     setIsDocumentAddModalVisible(true);
-  }, [isScholarStarted, getScholarIdFromUrl]);
+  }, [isScholarStarted, getScholarIdFromUrl, periodData?.id]);
 
   const handleDocumentsAdded = useCallback((documents) => {
     console.log("Eklenen dökümanlar:", documents);
@@ -253,42 +279,104 @@ const ScholarInfo = () => {
     message.info("Silme işlemi geliştirilecek");
   }, []);
 
+  // Modal handlers for document views
   const handleEntryDocuments = useCallback(() => {
-    const scholarId = getScholarIdFromUrl();
-    const periodId = periodData?.PeriodId;
-
-    if (window.generalPopup && typeof window.generalPopup.SetContentUrl === 'function') {
-      const url = `/Forms/ReactScholarComponents/ReactEntryDocuments.aspx?isPopup=true&hideSrc=true&scholarID=${encodeURIComponent(scholarId)}&periodId=${encodeURIComponent(periodId)}`;
-
-      window.generalPopup.SetSize(1200, 700);
-      window.generalPopup.SetHeaderText('Giriş Dokümanları');
-      window.generalPopup.SetContentUrl(url);
-      window.generalPopup.Show();
-      window.generalPopup.OnCloseButtonClick = () => {
-        window.location.reload();
-      };
-    } else {
-      setEntryModalVisible(true);
+    if (!isScholarStarted()) {
+      message.warning("Bursiyerin dönemi henüz başlamadığı için doküman görüntüleme yapılamaz.");
+      return;
     }
-  }, [getScholarIdFromUrl, periodData?.PeriodId]);
+    setIsEntryDocumentsModalVisible(true);
+  }, [isScholarStarted]);
 
   const handleExitDocuments = useCallback(() => {
-    const scholarId = getScholarIdFromUrl();
-
-    if (window.generalPopup && typeof window.generalPopup.SetContentUrl === 'function') {
-      const url = `/Forms/Documents/exitDocuments.aspx?isPopup=true&hideSrc=true&scholarID=${encodeURIComponent(scholarId)}`;
-
-      window.generalPopup.SetSize(1200, 700);
-      window.generalPopup.SetHeaderText('Çıkış Dokümanları');
-      window.generalPopup.SetContentUrl(url);
-      window.generalPopup.Show();
-      window.generalPopup.OnCloseButtonClick = () => {
-        window.location.reload();
-      };
-    } else {
-      setExitModalVisible(true);
+    if (!isScholarStarted()) {
+      message.warning("Bursiyerin dönemi henüz başlamadığı için doküman görüntüleme yapılamaz.");
+      return;
     }
-  }, [getScholarIdFromUrl]);
+    setIsExitDocumentsModalVisible(true);
+  }, [isScholarStarted]);
+
+  const handleEntryDocumentEdit = useCallback((record) => {
+    if (!isScholarStarted()) {
+      message.warning("Bursiyerin dönemi henüz başlamadığı için doküman düzenleme yapılamaz.");
+      return;
+    }
+
+    const documentTypeId = record.documentTypeId || 0;
+    const recordId = record.id;
+    const scholarId = getScholarIdFromUrl();
+    const termId = periodData?.id;
+
+    // Entry dokümanları için modal props'ları ayarla
+    setDocumentModalProps({
+      title: "Giriş Dokümanları",
+      moduleType: 6,
+      maxFileSize: 5,
+      documentTypeId,
+      record,
+      recordId,
+      scholarId,
+      termId,
+      listType: "entry",
+      customFields: {
+        documentCategory: {
+          type: "select",
+          label: "Doküman Kategorisi",
+          options: [
+            { value: "personal", label: "Kişisel Belgeler" },
+            { value: "academic", label: "Akademik Belgeler" },
+            { value: "administrative", label: "İdari Belgeler" }
+          ]
+        }
+      }
+    });
+
+    // Modalı aç
+    setIsDocumentAddModalVisible(true);
+  }, [isScholarStarted, getScholarIdFromUrl, periodData?.id]);
+
+  const handleExitDocumentEdit = useCallback((record) => {
+    if (!isScholarStarted()) {
+      message.warning("Bursiyerin dönemi henüz başlamadığı için doküman düzenleme yapılamaz.");
+      return;
+    }
+
+    const documentTypeId = record.documentTypeId || 0;
+    const recordId = record.id;
+    const scholarId = getScholarIdFromUrl();
+    const termId = periodData?.id;
+
+    // Exit dokümanları için modal props'ları ayarla
+    setDocumentModalProps({
+      title: "Çıkış Dokümanları",
+      moduleType: 7,
+      maxFileSize: 5,
+      documentTypeId,
+      record,
+      recordId,
+      scholarId,
+      termId,
+      listType: "exit",
+      customFields: {
+        exitReason: {
+          type: "select",
+          label: "Çıkış Nedeni",
+          options: [
+            { value: "completion", label: "Dönem Tamamlama" },
+            { value: "early_completion", label: "Erken Tamamlama" },
+            { value: "termination", label: "Feshi" }
+          ]
+        },
+        exitDate: {
+          type: "date",
+          label: "Çıkış Tarihi"
+        }
+      }
+    });
+
+    // Modalı aç
+    setIsDocumentAddModalVisible(true);
+  }, [isScholarStarted, getScholarIdFromUrl, periodData?.id]);
 
   // Effects
   useEffect(() => {
@@ -357,6 +445,82 @@ const ScholarInfo = () => {
       dataIndex: 'listType',
       key: 'listType',
       width: 120,
+    }
+  ];
+
+  const entryDocumentColumns = [
+    {
+      title: 'Belge Adı',
+      dataIndex: ['documentType', 'name'],
+      render: (name) => name || '-',
+      key: 'documentTypeId',
+      width: 250,
+    },
+    {
+      title: 'Beklenen Yükleme',
+      dataIndex: 'expectedUploadDate',
+      key: 'expectedUploadDate',
+      render: (date) => formatDate(date),
+      width: 160,
+    },
+    {
+      title: 'Gerçek Yükleme',
+      dataIndex: 'realUploadDate',
+      key: 'realUploadDate',
+      render: (date) => formatDate(date),
+      width: 160,
+    },
+    {
+      title: 'Durum',
+      key: 'status',
+      width: 120,
+      render: (_, record) => {
+        const hasUpload = record.realUploadDate;
+        return (
+          <Badge
+            status={hasUpload ? "success" : "warning"}
+            text={hasUpload ? "Yüklendi" : "Bekliyor"}
+          />
+        );
+      }
+    }
+  ];
+
+  const exitDocumentColumns = [
+    {
+      title: 'Belge Adı',
+      dataIndex: ['documentType', 'name'],
+      render: (name) => name || '-',
+      key: 'documentTypeId',
+      width: 250,
+    },
+    {
+      title: 'Beklenen Yükleme',
+      dataIndex: 'expectedUploadDate',
+      key: 'expectedUploadDate',
+      render: (date) => formatDate(date),
+      width: 160,
+    },
+    {
+      title: 'Gerçek Yükleme',
+      dataIndex: 'realUploadDate',
+      key: 'realUploadDate',
+      render: (date) => formatDate(date),
+      width: 160,
+    },
+    {
+      title: 'Durum',
+      key: 'status',
+      width: 120,
+      render: (_, record) => {
+        const hasUpload = record.realUploadDate;
+        return (
+          <Badge
+            status={hasUpload ? "success" : "error"}
+            text={hasUpload ? "Tamamlandı" : "Eksik"}
+          />
+        );
+      }
     }
   ];
 
@@ -528,7 +692,7 @@ const ScholarInfo = () => {
                 height: '28px'
               }}
             >
-              Giriş Dokümanları
+              Giriş Dokümanları ({entryDocumentsData.length})
             </Button>
             <Button
               type="primary"
@@ -542,13 +706,13 @@ const ScholarInfo = () => {
                 height: '28px'
               }}
             >
-              Çıkış Dokümanları
+              Çıkış Dokümanları ({exitDocumentsData.length})
             </Button>
           </Space>
         </Col>
       </Row>
     </Card>
-  ), [periodData, academicianData, formatDate, handleEntryDocuments, handleExitDocuments]);
+  ), [periodData, academicianData, formatDate, handleEntryDocuments, handleExitDocuments, entryDocumentsData.length, exitDocumentsData.length]);
 
   const PeriodAlternativeCard = useCallback(() => (
     <Card
@@ -694,11 +858,103 @@ const ScholarInfo = () => {
                 localizeThis={localizeThis}
               />
             )
+          },
+          {
+            key: "3",
+            label: (
+              <span>
+                <UploadOutlined style={{ marginRight: '4px' }} />
+                Giriş Dokümanları ({entryDocumentsData.length})
+              </span>
+            ),
+            children: (
+              <div>
+                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '6px' }}>
+                  <Text style={{ color: '#52c41a', fontWeight: 500 }}>
+                    <UploadOutlined style={{ marginRight: '6px' }} />
+                    Giriş Dokümanları
+                  </Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Bursiyerin dönem başlangıcında yüklemesi gereken belgeler
+                  </Text>
+                </div>
+                <DraggableAntdTable
+                  dataSource={entryDocumentsData}
+                  columns={entryDocumentColumns}
+                  sort={true}
+                  bordered={true}
+                  size="small"
+                  showEdit={true}
+                  editConfig={{
+                    buttonType: 'primary',
+                    buttonSize: 'small',
+                    width: 50
+                  }}
+                  filter={true}
+                  columnDraggable={true}
+                  rowKey="ID"
+                  pagination={{ pageSize: 10, showSizeChanger: false }}
+                  loading={loading}
+                  onEdit={handleEntryDocumentEdit}
+                  localizeThis={localizeThis}
+                  locale={{
+                    emptyText: 'Giriş dokümanı bulunamadı'
+                  }}
+                />
+              </div>
+            )
+          },
+          {
+            key: "4",
+            label: (
+              <span>
+                <DownloadOutlined style={{ marginRight: '4px' }} />
+                Çıkış Dokümanları ({exitDocumentsData.length})
+              </span>
+            ),
+            children: (
+              <div>
+                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#fff7e6', border: '1px solid #ffd591', borderRadius: '6px' }}>
+                  <Text style={{ color: '#fa8c16', fontWeight: 500 }}>
+                    <DownloadOutlined style={{ marginRight: '6px' }} />
+                    Çıkış Dokümanları
+                  </Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Bursiyerin dönem bitişinde teslim etmesi gereken belgeler
+                  </Text>
+                </div>
+                <DraggableAntdTable
+                  dataSource={exitDocumentsData}
+                  columns={exitDocumentColumns}
+                  sort={true}
+                  bordered={true}
+                  size="small"
+                  showEdit={true}
+                  editConfig={{
+                    buttonType: 'primary',
+                    buttonSize: 'small',
+                    width: 50
+                  }}
+                  filter={true}
+                  columnDraggable={true}
+                  rowKey="ID"
+                  pagination={{ pageSize: 10, showSizeChanger: false }}
+                  loading={loading}
+                  onEdit={handleExitDocumentEdit}
+                  localizeThis={localizeThis}
+                  locale={{
+                    emptyText: 'Çıkış dokümanı bulunamadı'
+                  }}
+                />
+              </div>
+            )
           }
         ]}
       />
     </Card>
-  ), [activeTabKey, periodDocumentsData, periodDocumentColumns, scholarPeriods, scholarPeriodColumns, loading, handleEdit, handleDelete, localizeThis]);
+  ), [activeTabKey, periodDocumentsData, periodDocumentColumns, scholarPeriods, scholarPeriodColumns, entryDocumentsData, exitDocumentsData, entryDocumentColumns, exitDocumentColumns, loading, handleEdit, handleDelete, handleEntryDocumentEdit, handleExitDocumentEdit, localizeThis]);
 
   return (
     <div style={{ padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -707,51 +963,7 @@ const ScholarInfo = () => {
         <TabContent />
       </div>
 
-      {/* Entry Documents Modal */}
-      <Modal
-        title={
-          <span>
-            <UploadOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
-            Giriş Dokümanları
-          </span>
-        }
-        open={entryModalVisible}
-        onCancel={() => setEntryModalVisible(false)}
-        width={1200}
-        footer={null}
-        destroyOnClose
-      >
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <p>Giriş dokümanları yükleme sayfası burada görüntülenecek.</p>
-          <Button type="primary" onClick={() => setEntryModalVisible(false)}>
-            Kapat
-          </Button>
-        </div>
-      </Modal>
-
-      {/* Exit Documents Modal */}
-      <Modal
-        title={
-          <span>
-            <DownloadOutlined style={{ marginRight: '8px', color: '#fa8c16' }} />
-            Çıkış Dokümanları
-          </span>
-        }
-        open={exitModalVisible}
-        onCancel={() => setExitModalVisible(false)}
-        width={1200}
-        footer={null}
-        destroyOnClose
-      >
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <p>Çıkış dokümanları yükleme sayfası burada görüntülenecek.</p>
-          <Button type="primary" onClick={() => setExitModalVisible(false)}>
-            Kapat
-          </Button>
-        </div>
-      </Modal>
-
-      {/* DocumentAddModalGlobal - Ana Modal */}
+      {/* DocumentAddModalGlobal - Tek Modal Tüm Doküman İşlemleri İçin */}
       {isDocumentAddModalVisible && documentModalProps && (
         <DocumentAddModalGlobal
           visible={isDocumentAddModalVisible}

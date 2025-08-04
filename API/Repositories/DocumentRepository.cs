@@ -47,7 +47,7 @@ namespace API.Repositories
 
         public async Task<IEnumerable<Document>> GetAllDocumentsAsync()
         {
-            _logger.LogInformation("GetAllDOcuments executing");
+            _logger.LogInformation("GetAllDocuments executing");
 
             IEnumerable<Document> documents = await _context.Documents.Where(a => a.Deleted == false).ToListAsync();
             return documents;
