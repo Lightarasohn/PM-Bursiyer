@@ -224,6 +224,18 @@ namespace API.Repositories
             return termsOfScholarsDocument;
         }
 
+        public async Task<TermsOfScholarsDocument> ChangeRealUploadDateAsync(int id, bool isRealUploadDate)
+        {
+            _logger.LogInformation("ChangeRealUploadDateAsync executing for ID: {Id}", id);
+            var termsOfScholarsDocument = await _context.TermsOfScholarsDocuments
+                .FirstOrDefaultAsync(tsd => tsd.Id == id && !tsd.Deleted) ?? throw new Exception($"TermsOfScholarsDocument with ID={id} not found");
+
+            termsOfScholarsDocument.RealUploadDate = isRealUploadDate ? DateOnly.FromDateTime(DateTime.UtcNow) : null;
+            await _context.SaveChangesAsync();
+
+            return termsOfScholarsDocument;
+        }
+
         public async Task<TermsOfScholarsDocument> DeleteTermsOfScholarsDocumentAsync(int scholarId, int termId, int documentTypeId)
         {
             _logger.LogInformation("DeleteTermsOfScholarsDocumentAsync executing");

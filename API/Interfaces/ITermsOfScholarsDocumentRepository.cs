@@ -18,5 +18,6 @@ namespace API.Interfaces
         Task<TermsOfScholarsDocument> DeleteTermsOfScholarsDocumentAsync(int scholarId, int termId, int documentTypeId);
         Task<List<TermsOfScholarsDocument>> AddRangeTermsOfScholarsDocumentAsync(List<TermsOfScholarsDocumentDTO> list);
         Task<TermsOfScholarsDocument> ChangeRealUploadDateAsync(int scholarId, int termId, int documentTypeId, string listType, bool isRealUploadDate);
+        Task<TermsOfScholarsDocument> ChangeRealUploadDateAsync(int id, bool isRealUploadDate);
     }
 }
