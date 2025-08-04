@@ -834,7 +834,7 @@ const ScholarInfo = () => {
                 editConfig={{
                   buttonType: 'primary',
                   buttonSize: 'small',
-                  width: 50
+                  width: 35
                 }}
                 filter={true}
                 columnDraggable={true}
@@ -902,7 +902,7 @@ const ScholarInfo = () => {
                   editConfig={{
                     buttonType: 'primary',
                     buttonSize: 'small',
-                    width: 50
+                    width: 35
                   }}
                   filter={true}
                   columnDraggable={true}
@@ -948,7 +948,7 @@ const ScholarInfo = () => {
                   editConfig={{
                     buttonType: 'primary',
                     buttonSize: 'small',
-                    width: 50
+                    width: 35
                   }}
                   filter={true}
                   columnDraggable={true}
@@ -1015,7 +1015,7 @@ const ScholarInfo = () => {
           editConfig={{
             buttonType: 'primary',
             buttonSize: 'small',
-            width: 50,
+            width: 35,
             title: 'Düzenle'
           }}
           filter={true}
@@ -1028,7 +1028,6 @@ const ScholarInfo = () => {
           locale={{
             emptyText: 'Giriş dokümanı bulunamadı'
           }}
-          scroll={{ y: 400 }}
         />
       </Modal>
 
@@ -1071,7 +1070,7 @@ const ScholarInfo = () => {
           editConfig={{
             buttonType: 'primary',
             buttonSize: 'small',
-            width: 50,
+            width: 35,
             title: 'Düzenle'
           }}
           filter={true}
@@ -1084,7 +1083,7 @@ const ScholarInfo = () => {
           locale={{
             emptyText: 'Çıkış dokümanı bulunamadı'
           }}
-          scroll={{ y: 400 }}
+          
         />
       </Modal>
 
