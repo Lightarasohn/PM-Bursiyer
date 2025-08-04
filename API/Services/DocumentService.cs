@@ -64,7 +64,7 @@ namespace API.Services
             
             if (dto.DocSourceTableId != null)
             {
-                await LinkDocumentToTarget(dto.DocSource, dto.DocSourceTableId.Value, dto.DocTypeId ?? 0, addedDoc.Id);
+                await LinkDocumentToTarget(dto.DocSource, dto.ScholarId, dto.DocTypeId ?? 0, addedDoc.Id);
             }
 
             return addedDoc;
@@ -88,15 +88,18 @@ namespace API.Services
             return (fileBytes, contentType, filename);
         }
 
-        public async Task LinkDocumentToTarget(int docSource, int sourceTableId, int docTypeId, int documentId)
+        public async Task LinkDocumentToTarget(int docSource, int scholarId, int docTypeId, int documentId)
         {
             switch (docSource)
             {
                 case 6: // Scholar
                     var scholarDocument = new ScholarDocument
                     {
-                        ScholarId = sourceTableId,
+                        ScholarId = scholarId,
                         DocumentId = documentId,
+                        CreDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                        CreUser = 1,
+                        Deleted = false
                     };
                     _context.ScholarDocuments.Add(scholarDocument);
                     break;

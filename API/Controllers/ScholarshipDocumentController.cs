@@ -20,10 +20,10 @@ namespace API.Controllers
         {
             _scholarshipDocumentRepo = scholarshipDocumentRepo;
         }
-        
+
 
         [HttpGet("{requesterId}/{documentTypeId}")]
-        public async Task<IActionResult> GetDocumentById([FromRoute] int requesterId, [FromRoute] int documentTypeId )
+        public async Task<IActionResult> GetDocumentById([FromRoute] int requesterId, [FromRoute] int documentTypeId)
         {
             if (!ModelState.IsValid)
             {
@@ -33,6 +33,28 @@ namespace API.Controllers
             {
                 var scholarDocuments = await _scholarshipDocumentRepo.GetDocumentsByRequesterIdAndDocumentTypeIdAsync(requesterId, documentTypeId);
                 return Ok(scholarDocuments);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Bir Hata Oluştu: {ex.Message}");
+            }
+        }
+
+        [HttpDelete("{scholarId}/{documentId}")]
+        public async Task<IActionResult> DeleteDocument([FromRoute] int scholarId, [FromRoute] int documentId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var deletedDocument = await _scholarshipDocumentRepo.DeleteDocumentAsync(scholarId, documentId);
+                if (deletedDocument == null)
+                {
+                    return NotFound("Doküman bulunamadı.");
+                }
+                return Ok(deletedDocument);
             }
             catch (Exception ex)
             {

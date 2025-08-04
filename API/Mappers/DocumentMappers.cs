@@ -22,6 +22,7 @@ namespace API.Mappers
                 Path = dto.Path,
                 FullPath = dto.FullPath,
                 CreUser = dto.CreUserId,
+                CreDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 Deleted = false,
                 DelDate = null,
                 DelUser = null,
