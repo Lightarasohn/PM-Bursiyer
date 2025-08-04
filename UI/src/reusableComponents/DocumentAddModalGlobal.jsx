@@ -140,24 +140,6 @@ const DocumentManagementModal = ({
   const handleFileChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
   };
-
-  const changeRealUploadDate = async (isRealUploadDate) => {
-    const response = await fetch(
-      `https://localhost:5156/api/term-scholar-document/real-upload-date/${scholarId}/${termId}/${documentTypeId}/${listType}/${isRealUploadDate}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.ok) {
-      message.success("Gerçek yükleme tarihi değiştirildi!");
-      loadDocuments();
-    }
-  };
-
   const handleAddDocument = async (values) => {
     try {
       setUploading(true);

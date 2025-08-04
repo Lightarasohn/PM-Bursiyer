@@ -161,6 +161,42 @@ namespace API.Repositories
             return term;
         }
 
+        public async Task<IEnumerable<Term>> GetTermsWithName(string termName)
+        {
+            _logger.LogInformation("GetTermsWithName executing for termName: {termName}", termName);
+
+            if (string.IsNullOrWhiteSpace(termName))
+                return Enumerable.Empty<Term>();
+
+          
+            var terms = await _context.Terms
+                .Include(t => t.TermDocumentTypes) 
+                .Where(t => !t.Deleted && t.Name.ToLower().Contains(termName.ToLower()))
+                .ToListAsync();
+         
+            foreach (var term in terms)
+            {
+              
+                var requiredEntryIds = term.TermDocumentTypes
+                    .Where(d => d.ListType == "ENTRY") 
+                    .Select(d => d.DocumentTypeId)
+                    .ToList();
+
+                var requiredBoardingIds = term.TermDocumentTypes
+                    .Where(d => d.ListType == "ONGOING")
+                    .Select(d => d.DocumentTypeId)
+                    .ToList();
+
+                var requiredExitIds = term.TermDocumentTypes
+                    .Where(d => d.ListType == "EXIT")
+                    .Select(d => d.DocumentTypeId)
+                    .ToList();
+            }
+
+            return terms;
+        }
+ 
+
         public async Task<Term> UpdateTermAsync(TermDTO termDto, int id)
         {
             _logger.LogInformation("UpdateTermAsync executing");

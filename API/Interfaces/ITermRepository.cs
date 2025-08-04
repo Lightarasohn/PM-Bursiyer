@@ -10,6 +10,7 @@ namespace API.Interfaces
     public interface ITermRepository
     {
         Task<IEnumerable<Term>> GetAllTermsAsync();
+        Task<IEnumerable<Term>> GetTermsWithName(string termName);
         Task<Term> GetTermByIdAsync(int id);
         Task<Term> GetTermByScholarId(int scholarId);
         Task<IEnumerable<Term>> GetAllTermsByScholarId(int scholarId);

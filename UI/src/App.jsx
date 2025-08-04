@@ -7,6 +7,7 @@ import BursiyerListesi from './forms/Bursiyer/ScholarList';
 import BursiyerEkle from './forms/Bursiyer/AddScholar';
 import ScholarInfo from './forms/Bursiyer/scholarInfo';
 import Test from './forms/TestPages/Test';
+import AddPeriodToScholar from './forms/Bursiyer/AddPeriodToScholar';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="bursiyer-listesi" element={<BursiyerListesi />} />
           <Route path="bursiyer-ekle" element={<BursiyerEkle />} />
           <Route path="scholar-info" element={<ScholarInfo />} />
+          <Route path="add-period-to-scholar" element={<AddPeriodToScholar />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -85,6 +85,22 @@ namespace API.Controllers
                 return BadRequest($"Bir hata oluştu: {ex.Message}");
             }
         }
+        [HttpGet("scholarTermsWithName")]
+public async Task<IActionResult> GetAllTermByScholarId([FromQuery] string termName)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var term = await _termRepo.GetTermsWithName(termName);
+                return Ok(term);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Bir hata oluştu: {ex.Message}");
+            }
+        }
 
         [HttpPost]
         public async Task<IActionResult> AddTerm([FromBody] TermDTO termDto)

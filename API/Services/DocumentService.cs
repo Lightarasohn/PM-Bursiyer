@@ -17,14 +17,16 @@ namespace API.Services
     public class DocumentService : IDocumentService
     {
         private readonly IDocumentRepository _documentRepository;
+        private readonly ITermsOfScholarsDocumentRepository _termsOfScholarDocuments;
         private readonly PostgresContext _context;
         private readonly IConfiguration _config;
         private string? _serverUrl;
         private readonly string _fileDirectory;
-        public DocumentService(IDocumentRepository documentRepository, PostgresContext context, IConfiguration config)
+        public DocumentService(IDocumentRepository documentRepository,ITermsOfScholarsDocumentRepository termsOfScholarDocuments, PostgresContext context, IConfiguration config)
         {
             _documentRepository = documentRepository;
             _context = context;
+            _termsOfScholarDocuments = termsOfScholarDocuments;
             _config = config;
             _serverUrl = _config["Kestrel:Endpoints:Https:Url"];
             _fileDirectory = Path.Combine(Directory.GetCurrentDirectory(), "UploadedDocuments");
@@ -61,9 +63,10 @@ namespace API.Services
             {
                 await dto.FileContent.CopyToAsync(stream);
             }
-            
+
             if (dto.DocSourceTableId != null)
             {
+                await _termsOfScholarDocuments.ChangeRealUploadDateAsync(dto.DocSourceTableId ?? 0, true);
                 await LinkDocumentToTarget(dto.DocSource, dto.ScholarId, dto.DocTypeId ?? 0, addedDoc.Id);
             }
 
@@ -100,6 +103,7 @@ namespace API.Services
                         CreDate = DateOnly.FromDateTime(DateTime.UtcNow),
                         CreUser = 1,
                         Deleted = false
+                        
                     };
                     _context.ScholarDocuments.Add(scholarDocument);
                     break;
