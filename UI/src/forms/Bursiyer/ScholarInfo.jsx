@@ -195,16 +195,20 @@ const ScholarInfo = () => {
     const documentTypeId = record.documentTypeId || 0;
     const recordId = record.id;
     const scholarId = getScholarIdFromUrl();
+    const termId = periodData?.id;
+    const listType = record.listType || "default";
 
     // Modal props'ları ayarla
     setDocumentModalProps({
       title: "Proje Dökümanları",
       moduleType: 6,
-      allowedFileTypes: [".pdf", ".doc", ".docx"],
       maxFileSize: 5,
       documentTypeId,
+      record,
       recordId,
       scholarId,
+      termId,
+      listType,
       customFields: {
         projectPhase: {
           type: "select",

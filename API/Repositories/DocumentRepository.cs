@@ -26,7 +26,7 @@ namespace API.Repositories
 
         public async Task<Document> AddDocumentAsync(DocumentAddDTO documentDTO)
         {
-            _logger.LogInformation("AddAcademicianAsync executing");
+            _logger.LogInformation("AddDocumentAsync executing");
      
             Document documentToAdd = documentDTO.ToModel();
             var result = await _context.Documents.AddAsync(documentToAdd);

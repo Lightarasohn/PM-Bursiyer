@@ -12,5 +12,6 @@ namespace API.Interfaces
     public interface IScholarshipDocumentRepository
     {
         Task<IEnumerable<ScholarDocument>> GetDocumentsByRequesterIdAndDocumentTypeIdAsync(int requesterId, int documentTypeId);
+        Task<ScholarDocument> DeleteDocumentAsync(int scholarId, int documentId);
     }
 }

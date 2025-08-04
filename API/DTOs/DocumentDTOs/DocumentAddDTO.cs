@@ -7,6 +7,8 @@ namespace API.DTOs.DocumentDTOs
 {
     public class DocumentAddDTO
     {
+        public int ScholarId { get; set; }
+        
         public int CreUserId { get; set; }
 
         public int DocSource { get; set; }

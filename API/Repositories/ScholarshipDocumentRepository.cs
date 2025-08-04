@@ -24,13 +24,23 @@ namespace API.Repositories
             _logger = logger;
         }
 
+        public async Task<ScholarDocument> DeleteDocumentAsync(int scholarId, int documentId)
+        {
+            var document = await _context.ScholarDocuments
+                .FirstOrDefaultAsync(d => d.ScholarId == scholarId && d.DocumentId == documentId)
+                ?? throw new Exception("Doküman bulunamadı");
+            document.Deleted = true;
+            await _context.SaveChangesAsync();
+            return document;
+        }
+
         public async Task<IEnumerable<ScholarDocument>> GetDocumentsByRequesterIdAndDocumentTypeIdAsync(int requesterId, int documentTypeId)
         {
             _logger.LogInformation("GetDocumentsByRequesterIdAndDocumentTypeIdAsync executing");
 
             var scholarDocuments = await _context.ScholarDocuments
             .Include(d => d.Document)
-            .Where(a=> a.DocumentId == a.Document.Id && a.Document.DocSourceTableId == requesterId && a.Document.DocTypeId == documentTypeId)
+            .Where(a=> a.Deleted == false && a.DocumentId == a.Document.Id && a.Document.DocSourceTableId == requesterId && a.Document.DocTypeId == documentTypeId)
             .ToListAsync();
 
             return scholarDocuments;

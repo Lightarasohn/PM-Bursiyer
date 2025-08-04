@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Upload, message, Form, Input, Select, Space, Divider } from "antd";
+import {
+  Modal,
+  Button,
+  Upload,
+  message,
+  Form,
+  Input,
+  Select,
+  Space,
+  Divider,
+} from "antd";
 import {
   PlusOutlined,
   UploadOutlined,
@@ -37,12 +47,23 @@ const DocumentManagementModal = ({
   moduleType,
   recordId,
   documentTypeId,
-  allowedFileTypes = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"],
+  allowedFileTypes = [
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".jpg",
+    ".jpeg",
+    ".png",
+  ],
   maxFileSize = 10,
   localizeThis = (key) => key,
   onRefresh,
   scholarId,
   termId,
+  listType,
+  record
 }) => {
   const [documents, setDocuments] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -64,7 +85,9 @@ const DocumentManagementModal = ({
   const loadDocuments = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://localhost:5156/api/scholar-document/${recordId}/${documentTypeId}`);
+      const response = await fetch(
+        `https://localhost:5156/api/scholar-document/${recordId}/${documentTypeId}`
+      );
       if (response.ok) {
         const data = await response.json();
         setDocuments(data || []);
@@ -84,28 +107,23 @@ const DocumentManagementModal = ({
       if (response.ok) {
         const data = await response.json();
         setDocumentTypes(data || []);
-        console.log(data)
+        console.log(data);
       }
     } catch (error) {
       console.error("Doküman türleri yüklenirken hata:", error);
-      // Varsayılan türler
-      setDocumentTypes([
-        { id: 1, name: "Genel Doküman" },
-        { id: 2, name: "Rapor" },
-        { id: 3, name: "Sunum" },
-        { id: 4, name: "Diğer" }
-      ]);
     }
   };
 
   // Dosya upload öncesi validasyon
   const beforeUpload = (file) => {
-    const isValidType = allowedFileTypes.some(type => 
+    const isValidType = allowedFileTypes.some((type) =>
       file.name.toLowerCase().endsWith(type.toLowerCase())
     );
-    
+
     if (!isValidType) {
-      message.error(`Sadece ${allowedFileTypes.join(", ")} formatları desteklenmektedir!`);
+      message.error(
+        `Sadece ${allowedFileTypes.join(", ")} formatları desteklenmektedir!`
+      );
       return Upload.LIST_IGNORE;
     }
 
@@ -123,20 +141,26 @@ const DocumentManagementModal = ({
     setFileList(newFileList);
   };
 
-  const changeRealUploadDate = async () => {
-    const response = await fetch("https://localhost:5156/api/term-scholar-document", {
-        method: "",
-        body: formData,
-      });
-  }
+  const changeRealUploadDate = async (isRealUploadDate) => {
+    const response = await fetch(
+      `https://localhost:5156/api/term-scholar-document/real-upload-date/${scholarId}/${termId}/${documentTypeId}/${listType}/${isRealUploadDate}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.ok) {
+      message.success("Gerçek yükleme tarihi değiştirildi!");
+      loadDocuments();
+    }
+  };
 
   const handleAddDocument = async (values) => {
     try {
       setUploading(true);
-      
-      console.log("Form values:", values);
-      console.log("Modüle Type", moduleType);
-      console.log("File list:", fileList);
 
       // Dosya kontrolü
       if (!fileList || fileList.length === 0) {
@@ -149,11 +173,6 @@ const DocumentManagementModal = ({
         message.error("Dosya bulunamadı!");
         return;
       }
-
-      console.log("File object:", fileObj);
-      console.log("File object type:", typeof fileObj);
-      console.log("File object constructor:", fileObj.constructor.name);
-      console.log("File size:", fileObj.size);
 
       const formData = new FormData();
 
@@ -168,44 +187,43 @@ const DocumentManagementModal = ({
       formData.append("DocSourceTableId", recordId?.toString() || "0");
       formData.append("Title", values.title || "title");
       formData.append("CreUserId", "1");
-      formData.append("Extension", fileObj.name.split('.').pop());
+      formData.append("Extension", fileObj.name.split(".").pop());
+      formData.append("ScholarId", scholarId);
       
+
       // Dosyayı ekle - farklı isimlerle dene
       formData.append("FileContent", fileObj, fileObj.name);
       formData.append("file", fileObj, fileObj.name);
       formData.append("File", fileObj, fileObj.name);
 
-      console.log("FormData entries:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-
-      const response = await fetch("https://localhost:5156/api/documentService", {
-        method: "POST",
-        body: formData,
-      });
-
-      console.log("Response status:", response.status);
+      console.log("FormData içeriği:", formData);
+      console.log("ScholarId:", scholarId);
+      const response = await fetch(
+        "https://localhost:5156/api/documentService",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
-        console.log("Başarılı yükleme:", result);
+        setDocuments((prev) => [...prev, result]);
         message.success("Doküman başarıyla yüklendi!");
-        
+
         // Form ve state'leri temizle
         form.resetFields();
         setFileList([]);
         setAddDocumentModalVisible(false);
-        
+
         // Listeyi yenile
-        loadDocuments();
+        changeRealUploadDate(true);
         onRefresh?.();
       } else {
         const errorText = await response.text();
         console.error("Hata yanıtı:", errorText);
         message.error("Yükleme başarısız: " + errorText);
       }
-
     } catch (error) {
       console.error("İstek hatası:", error);
       message.error("Sunucuya bağlanırken hata oluştu: " + error.message);
@@ -217,14 +235,21 @@ const DocumentManagementModal = ({
   // Doküman silme
   const handleDeleteDocument = async (record) => {
     try {
-      const response = await fetch(`/api/documents/delete/${record.id}`, {
-        method: 'DELETE',
+      console.log("Silme işlemi için kayıt:", record);
+      const responseScholarDocument = await fetch(`https://localhost:5156/api/scholar-document/${scholarId}/${record.document.id}`, {
+        method: "DELETE",
       });
 
-      if (response.ok) {
-        message.success("Doküman silindi!");
-        loadDocuments();
-        
+      if (responseScholarDocument.ok) {
+        const responseTermScholarDocument = await fetch(`https://localhost:5156/api/term-scholar-document/${scholarId}/${termId}/${record.document.docTypeId}`, {
+          method: "DELETE",
+        });
+
+        if (responseTermScholarDocument.ok) {
+          message.success("Doküman silindi!");
+          loadDocuments();
+        }
+
         if (onRefresh) {
           onRefresh();
         }
@@ -238,7 +263,7 @@ const DocumentManagementModal = ({
   };
 
   // Doküman önizleme
- 
+
   const handleMainModalOk = () => {
     if (onOk) {
       onOk(documents);
@@ -253,92 +278,87 @@ const DocumentManagementModal = ({
     setFileList([]);
   };
 
-
   const handleDownloadDocument = (record) => {
-  const fileNameEncoded = encodeURIComponent(record.document?.path || "");
-  console.log("Encoded file name:", fileNameEncoded);
-  const fileUrl = `https://localhost:5156/api/documentService/download?filename=${fileNameEncoded}`;
-  const fileName = record.document?.docName || "dosya";
+    const fileNameEncoded = encodeURIComponent(record.document?.path || "");
+    console.log("Encoded file name:", fileNameEncoded);
+    const fileUrl = `https://localhost:5156/api/documentService/download?filename=${fileNameEncoded}`;
+    const fileName = record.document?.docName || "dosya";
 
-  const link = document.createElement("a");
-  link.href = fileUrl;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   // Tablo kolonları
- const columns = [
-  {
-    title: "Başlık",
-    dataIndex: ["document", "title"],
-    key: "title",
-    ellipsis: true,
-    render: (text) => (
-      <Space>
-        <FileOutlined style={{ color: '#1890ff' }} />
-        <span title={text}>{text}</span>
-      </Space>
-    ),
-  },
-  {
-    title: "Dosya Adı",
-    dataIndex: ["document", "docName"],
-    key: "fileName",
-    ellipsis: true,
-  },
-  {
-    title: "Doküman Türü",
-    key: "documentTypeName",
-    width: 150,
-    render: (_, record) => {
-      
-      const docTypeId = record.document?.docTypeId;
-      return docTypeId || "Belirtilmemiş";
+  const columns = [
+    {
+      title: "Başlık",
+      dataIndex: ["document", "title"],
+      key: "title",
+      ellipsis: true,
+      render: (text) => (
+        <Space>
+          <FileOutlined style={{ color: "#1890ff" }} />
+          <span title={text}>{text}</span>
+        </Space>
+      ),
     },
-  },
-  
-  {
-    title: "Yükleme Tarihi",
-    dataIndex: ["document", "creDate"],
-    key: "uploadDate",
-    width: 140,
-    align: "center",
-    render: (date) => {
-      if (!date) return "N/A";
-      return new Date(date).toLocaleDateString("tr-TR");
+    {
+      title: "Dosya Adı",
+      dataIndex: ["document", "docName"],
+      key: "fileName",
+      ellipsis: true,
     },
-  },
-  {
-    title: "İşlemler",
-    key: "actions",
-    width: 150,
-    align: "center",
-    fixed: "right",
-    render: (_, record) => (
-      <Space size="small">
-        
-       <Button
-  type="default"
-  size="small"
-  icon={<DownloadOutlined />}
-  onClick={() => handleDownloadDocument(record)}
-  title="İndir"
-/>
-        <Button
-          type="primary"
-          danger
-          size="small"
-          icon={<DeleteOutlined />}
-          onClick={() => handleDeleteDocument(record)}
-          title="Sil"
-        />
-        
-      </Space>
-    ),
-  },
-];
+    {
+      title: "Doküman Türü",
+      key: "documentTypeName",
+      width: 150,
+      render: (_, record) => {
+        const docTypeId = record.document?.docTypeId;
+        return docTypeId || "Belirtilmemiş";
+      },
+    },
 
+    {
+      title: "Yükleme Tarihi",
+      dataIndex: ["document", "creDate"],
+      key: "creDate",
+      width: 140,
+      align: "center",
+      render: (date) => {
+        if (!date) return "N/A";
+        return new Date(date).toLocaleDateString("tr-TR");
+      },
+    },
+    {
+      title: "İşlemler",
+      key: "actions",
+      width: 150,
+      align: "center",
+      fixed: "right",
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="default"
+            size="small"
+            icon={<DownloadOutlined />}
+            onClick={() => handleDownloadDocument(record)}
+            title="İndir"
+          />
+          <Button
+            type="primary"
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteDocument(record)}
+            title="Sil"
+          />
+        </Space>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -360,10 +380,10 @@ const DocumentManagementModal = ({
             onClick={() => setAddDocumentModalVisible(true)}
             size="large"
             style={{
-              background: 'linear-gradient(45deg, #1890ff, #36cfc9)',
-              border: 'none',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(24, 144, 255, 0.3)',
+              background: "linear-gradient(45deg, #1890ff, #36cfc9)",
+              border: "none",
+              borderRadius: "8px",
+              boxShadow: "0 4px 12px rgba(24, 144, 255, 0.3)",
             }}
           >
             Doküman Ekle
@@ -380,7 +400,7 @@ const DocumentManagementModal = ({
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} / ${total} doküman`,
           }}
           localizeThis={localizeThis}
@@ -388,15 +408,17 @@ const DocumentManagementModal = ({
         />
 
         {documents.length === 0 && !loading && (
-          <div style={{
-            textAlign: 'center',
-            padding: '60px 0',
-            color: '#999',
-            fontSize: '16px'
-          }}>
-            <FileOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 0",
+              color: "#999",
+              fontSize: "16px",
+            }}
+          >
+            <FileOutlined style={{ fontSize: "48px", marginBottom: "16px" }} />
             <div>Henüz doküman eklenmedi</div>
-            <div style={{ fontSize: '14px', marginTop: '8px' }}>
+            <div style={{ fontSize: "14px", marginTop: "8px" }}>
               Doküman eklemek için yukarıdaki butonu kullanın
             </div>
           </div>
@@ -420,7 +442,7 @@ const DocumentManagementModal = ({
           layout="vertical"
           onFinish={handleAddDocument}
           initialValues={{
-            documentTypeId: documentTypeId
+            documentTypeId: documentTypeId,
           }}
         >
           <Form.Item
@@ -437,7 +459,7 @@ const DocumentManagementModal = ({
             rules={[{ required: true, message: "Lütfen doküman türü seçin!" }]}
           >
             <Select placeholder="Doküman türü seçin" size="large">
-              {documentTypes.map(type => (
+              {documentTypes.map((type) => (
                 <Option key={type.id} value={type.id}>
                   {type.name}
                 </Option>
@@ -454,7 +476,7 @@ const DocumentManagementModal = ({
               onChange={handleFileChange}
               fileList={fileList}
               maxCount={1}
-              accept={allowedFileTypes.join(',')}
+              accept={allowedFileTypes.join(",")}
               listType="text"
             >
               <Button icon={<UploadOutlined />} size="large" block>
@@ -463,15 +485,17 @@ const DocumentManagementModal = ({
             </Upload>
           </Form.Item>
 
-          <div style={{ 
-            background: '#f6f6f6', 
-            padding: '12px', 
-            borderRadius: '6px',
-            fontSize: '12px',
-            color: '#666'
-          }}>
+          <div
+            style={{
+              background: "#f6f6f6",
+              padding: "12px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              color: "#666",
+            }}
+          >
             <strong>Dosya Kuralları:</strong>
-            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+            <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px" }}>
               <li>Maksimum dosya boyutu: {maxFileSize}MB</li>
               <li>Desteklenen formatlar: {allowedFileTypes.join(", ")}</li>
             </ul>
