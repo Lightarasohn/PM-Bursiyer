@@ -63,9 +63,11 @@ const ScholarInfo = () => {
   const [isDocumentAddModalVisible, setIsDocumentAddModalVisible] = useState(false);
   const [documentModalProps, setDocumentModalProps] = useState(null);
   
-  // Modal states for document views
+  // Modal states for document views - YENİ EKLEMELER
   const [isEntryDocumentsModalVisible, setIsEntryDocumentsModalVisible] = useState(false);
   const [isExitDocumentsModalVisible, setIsExitDocumentsModalVisible] = useState(false);
+  const [entryModalLoading, setEntryModalLoading] = useState(false);
+  const [exitModalLoading, setExitModalLoading] = useState(false);
 
   // Utility functions
   const formatDate = useCallback((dateString) => {
@@ -279,7 +281,7 @@ const ScholarInfo = () => {
     message.info("Silme işlemi geliştirilecek");
   }, []);
 
-  // Modal handlers for document views
+  // YENİ MODAL HANDLERS
   const handleEntryDocuments = useCallback(() => {
     if (!isScholarStarted()) {
       message.warning("Bursiyerin dönemi henüz başlamadığı için doküman görüntüleme yapılamaz.");
@@ -331,7 +333,8 @@ const ScholarInfo = () => {
       }
     });
 
-    // Modalı aç
+    // Modalı aç ve Entry modalını kapat
+    setIsEntryDocumentsModalVisible(false);
     setIsDocumentAddModalVisible(true);
   }, [isScholarStarted, getScholarIdFromUrl, periodData?.id]);
 
@@ -374,9 +377,31 @@ const ScholarInfo = () => {
       }
     });
 
-    // Modalı aç
+    // Modalı aç ve Exit modalını kapat
+    setIsExitDocumentsModalVisible(false);
     setIsDocumentAddModalVisible(true);
   }, [isScholarStarted, getScholarIdFromUrl, periodData?.id]);
+
+  // YENİ MODAL KAPANMA HANDLERS
+  const handleEntryModalClose = useCallback(() => {
+    setIsEntryDocumentsModalVisible(false);
+  }, []);
+
+  const handleExitModalClose = useCallback(() => {
+    setIsExitDocumentsModalVisible(false);
+  }, []);
+
+  // Modal kapatıldıktan sonra verileri yenileme
+  const handleDocumentModalClose = useCallback(() => {
+    setIsDocumentAddModalVisible(false);
+    setDocumentModalProps(null);
+    
+    // Verileri yenile
+    const scholarId = getScholarIdFromUrl();
+    if (periodData?.id) {
+      fetchPeriodDocuments(scholarId, periodData.id);
+    }
+  }, [getScholarIdFromUrl, periodData?.id, fetchPeriodDocuments]);
 
   // Effects
   useEffect(() => {
@@ -448,6 +473,7 @@ const ScholarInfo = () => {
     }
   ];
 
+  // YENİ TABLO KOLONLARI - ENTRY VE EXIT İÇİN
   const entryDocumentColumns = [
     {
       title: 'Belge Adı',
@@ -963,17 +989,129 @@ const ScholarInfo = () => {
         <TabContent />
       </div>
 
+      {/* YENİ ENTRY DOKÜMANLARI MODAL */}
+      <Modal
+        title={
+          <span>
+            <UploadOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
+            Giriş Dokümanları
+          </span>
+        }
+        open={isEntryDocumentsModalVisible}
+        onCancel={handleEntryModalClose}
+        footer={[
+          <Button key="close" onClick={handleEntryModalClose}>
+            Kapat
+          </Button>
+        ]}
+        width={1200}
+        destroyOnClose
+      >
+        <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '6px' }}>
+          <Text style={{ color: '#52c41a', fontWeight: 500 }}>
+            <UploadOutlined style={{ marginRight: '6px' }} />
+            Giriş Dokümanları Listesi
+          </Text>
+          <br />
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            Bursiyerin dönem başlangıcında yüklemesi gereken belgeler. Düzenlemek için edit butonuna tıklayın.
+          </Text>
+        </div>
+        
+        <DraggableAntdTable
+          dataSource={entryDocumentsData}
+          columns={entryDocumentColumns}
+          sort={true}
+          bordered={true}
+          size="small"
+          showEdit={true}
+          editConfig={{
+            buttonType: 'primary',
+            buttonSize: 'small',
+            width: 50,
+            title: 'Düzenle'
+          }}
+          filter={true}
+          columnDraggable={true}
+          rowKey="ID"
+          pagination={{ pageSize: 8, showSizeChanger: false }}
+          loading={entryModalLoading}
+          onEdit={handleEntryDocumentEdit}
+          localizeThis={localizeThis}
+          locale={{
+            emptyText: 'Giriş dokümanı bulunamadı'
+          }}
+          scroll={{ y: 400 }}
+        />
+      </Modal>
+
+      {/* YENİ EXIT DOKÜMANLARI MODAL */}
+      <Modal
+        title={
+          <span>
+            <DownloadOutlined style={{ marginRight: '8px', color: '#fa8c16' }} />
+            Çıkış Dokümanları
+          </span>
+        }
+        open={isExitDocumentsModalVisible}
+        onCancel={handleExitModalClose}
+        footer={[
+          <Button key="close" onClick={handleExitModalClose}>
+            Kapat
+          </Button>
+        ]}
+        width={1200}
+        destroyOnClose
+      >
+        <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#fff7e6', border: '1px solid #ffd591', borderRadius: '6px' }}>
+          <Text style={{ color: '#fa8c16', fontWeight: 500 }}>
+            <DownloadOutlined style={{ marginRight: '6px' }} />
+            Çıkış Dokümanları Listesi
+          </Text>
+          <br />
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            Bursiyerin dönem bitişinde teslim etmesi gereken belgeler. Düzenlemek için edit butonuna tıklayın.
+          </Text>
+        </div>
+        
+        <DraggableAntdTable
+          dataSource={exitDocumentsData}
+          columns={exitDocumentColumns}
+          sort={true}
+          bordered={true}
+          size="small"
+          showEdit={true}
+          editConfig={{
+            buttonType: 'primary',
+            buttonSize: 'small',
+            width: 50,
+            title: 'Düzenle'
+          }}
+          filter={true}
+          columnDraggable={true}
+          rowKey="ID"
+          pagination={{ pageSize: 8, showSizeChanger: false }}
+          loading={exitModalLoading}
+          onEdit={handleExitDocumentEdit}
+          localizeThis={localizeThis}
+          locale={{
+            emptyText: 'Çıkış dokümanı bulunamadı'
+          }}
+          scroll={{ y: 400 }}
+        />
+      </Modal>
+
       {/* DocumentAddModalGlobal - Tek Modal Tüm Doküman İşlemleri İçin */}
       {isDocumentAddModalVisible && documentModalProps && (
         <DocumentAddModalGlobal
           visible={isDocumentAddModalVisible}
-          onCancel={handleModalClose}
+          onCancel={handleDocumentModalClose}
           onOk={handleDocumentsAdded}
           {...documentModalProps}
         />
       )}
     </div>
   );
-};
+}
 
 export default ScholarInfo;
