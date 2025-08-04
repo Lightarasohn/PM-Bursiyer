@@ -44,5 +44,19 @@ namespace API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPost("add-term-to-scholar")]
+        public async Task<IActionResult> AddTermToScholar([FromBody] ScholarAddNewTermDto scholarAddNewTermDto)
+        {
+            try
+            {
+                var scholarResponse = await _scholarAddService.AddTermToScholar(scholarAddNewTermDto);
+                return Ok(scholarResponse);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

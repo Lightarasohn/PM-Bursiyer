@@ -20,8 +20,8 @@ export default function AddPeriodToScholar({ targetID }) {
         setAcademicians(acadData || []);
         setScholarTypes(scholarData || []);
         setDocumentTypes((docData || []).map((d) => ({
-          label: d.TypeName,
-          value: d.Id.toString()
+          label: d.name,
+          value: d.id.toString()
         })));
       })
       .catch(() => {
@@ -77,42 +77,27 @@ const handleSelectPeriod = (value) => {
 };
 
   // Kaydetme
-  const handleSave = () => {
-    form.validateFields()
-      .then((values) => {
-        const payload = {
-          ScholarId: parseInt(targetID),
-          PeriodId: 0, // Burayı uygun şekilde set et (backend'den Id gelirse burada tutabilirsin)
-          PeriodName: values.periodName,
-          StartDate: values.startDate ? values.startDate.format("YYYY-MM-DD") : null,
-          EndDate: values.endDate ? values.endDate.format("YYYY-MM-DD") : null,
-          RequiredDocumentTypeNamesOnEntry: values.entryDocuments || [],
-          RequiredDocumentTypeNamesOnBoarding: values.ongoingDocuments || [],
-          RequiredDocumentTypeNamesOnExit: values.exitDocuments || [],
-          ResponsibleAcademicianId: values.responsibleId,
-          ScholarTypeId: values.scholarTypeId
-        };
-
-        fetch("/api/scholars/save-period-infos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        })
-          .then((res) => {
-            if (res.ok) {
-              message.success("Kayıt başarıyla yapıldı");
-            } else {
-              message.error("Kayıt sırasında bir hata oluştu");
-            }
-          })
-          .catch(() => message.error("Kayıt sırasında bir hata oluştu"));
-      })
-      .catch(() => message.warning("Lütfen tüm gerekli alanları doldurun"));
+  const handleSave = (values) => {
+    values.startDate = values.startDate ? values.startDate.format("YYYY-MM-DD") : null;
+    values.endDate = values.endDate ? values.endDate.format("YYYY-MM-DD") : null;
+     const query = new URLSearchParams(window.location.search);
+    const payload = {
+      scholarId: parseInt(query.get("targetID")),
+      termId: 0, // Burayı uygun şekilde set et (backend'den Id gelirse burada tutabilirsin)
+      periodName: values.periodName,
+      startDate: values.startDate,
+      endDate: values.endDate,
+      requiredDocumentTypeNamesOnEntry: values.entryDocuments || [],
+      requiredDocumentTypeNamesOnBoarding: values.ongoingDocuments || [],
+      requiredDocumentTypeNamesOnExit: values.exitDocuments || [],
+      responsibleAcademicianId: values.responsibleId,
+    };
+    console.log("Payload:", payload); 
   };
 
   return (
     <Card title="Dönem Bilgileri" className="max-w-3xl mx-auto mt-6 shadow" variant="outlined">
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" onFinish={(val) => handleSave(val)}>
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -157,14 +142,6 @@ const handleSelectPeriod = (value) => {
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item name="scholarTypeId" label="Burs Türü" rules={[{ required: true }]}>
-              <Select
-                options={scholarTypes.map((s) => ({ label: s.TypeName, value: s.Id.toString() }))}
-                placeholder="Seçiniz"
-              />
-            </Form.Item>
-          </Col>
         </Row>
 
         <Row gutter={16}>
@@ -186,7 +163,7 @@ const handleSelectPeriod = (value) => {
         </Row>
 
         <div className="text-center mt-4">
-          <Button type="primary" size="large" onClick={handleSave}>
+          <Button type="primary" size="large" htmlType="submit">
             Kaydet
           </Button>
         </div>

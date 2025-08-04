@@ -198,20 +198,7 @@ const ScholarInfo = () => {
 
   const handleAddPeriodToScholar = useCallback(() => {
     const scholarId = getScholarIdFromUrl();
-    
-    if (window.generalPopup && typeof window.generalPopup.SetContentUrl === 'function') {
-      const url = `/Forms/ReactScholarComponents/ReactAddPeriod.aspx?isPopup=true&hideSrc=true&scholarID=${encodeURIComponent(scholarId)}`;
-      
-      window.generalPopup.SetSize(1000, 600);
-      window.generalPopup.SetHeaderText('Bursiyere Dönem Ekle');
-      window.generalPopup.SetContentUrl(url);
-      window.generalPopup.Show();
-      window.generalPopup.OnCloseButtonClick = () => {
-        window.location.reload();
-      };
-    } else {
-      message.info("Dönem ekleme popup'ı açılacak...");
-    }
+    window.location.href = `/add-period-to-scholar?targetID=${scholarId}`;
   }, [getScholarIdFromUrl]);
 
   const handleEdit = useCallback((record) => {
