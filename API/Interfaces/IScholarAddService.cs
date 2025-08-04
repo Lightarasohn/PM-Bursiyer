@@ -10,5 +10,6 @@ namespace API.Interfaces
     {
         public Task<bool> AddScholarFullAsync(ScholarAddDto scholarAddDto);
         public Task<bool> AddScholarFull(ScholarAddDto scholarAddDto);
+        public Task<bool> AddTermToScholar(ScholarAddNewTermDto scholarAddNewTermDto);
     }
 }
