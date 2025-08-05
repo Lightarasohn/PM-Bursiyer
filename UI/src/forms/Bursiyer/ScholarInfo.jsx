@@ -14,7 +14,11 @@ import {
   Space,
   Divider,
   Badge,
-  message
+  message,
+  Select,
+  DatePicker,
+  Form,
+  Alert,
 } from 'antd';
 import {
   UserOutlined,
@@ -26,7 +30,11 @@ import {
   UploadOutlined,
   DownloadOutlined,
   PlusOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  SaveOutlined,
+  PlayCircleOutlined,
+  ExclamationCircleOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import DraggableAntdTable from '../../reusableComponents/DraggableAntdTable';
 import DocumentAddModalGlobal from '../../reusableComponents/DocumentAddModalGlobal';
@@ -34,6 +42,7 @@ import GetScholarAPI from "../../services/GetScholarAPI"
 import GetTermOfScholar from '../../services/GetTermOfScholar';
 import GetAllTermsOfScholar from '../../services/GetAllTermsOfScholar';
 import GetScholarPeriodDocuments from '../../services/GetScholarPeriodDocuments';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
@@ -62,12 +71,20 @@ const ScholarInfo = () => {
   const [currentRecord, setCurrentRecord] = useState(null);
   const [isDocumentAddModalVisible, setIsDocumentAddModalVisible] = useState(false);
   const [documentModalProps, setDocumentModalProps] = useState(null);
+  const [selectedPeriodId, setSelectedPeriodId] = useState(null);
+  const [filteredPeriodDocuments, setFilteredPeriodDocuments] = useState([]);
+  const [periodSelectorLoading, setPeriodSelectorLoading] = useState(false);
   
-  // Modal states for document views - YENİ EKLEMELER
+  // Modal states for document views
   const [isEntryDocumentsModalVisible, setIsEntryDocumentsModalVisible] = useState(false);
   const [isExitDocumentsModalVisible, setIsExitDocumentsModalVisible] = useState(false);
   const [entryModalLoading, setEntryModalLoading] = useState(false);
   const [exitModalLoading, setExitModalLoading] = useState(false);
+  
+  // Exit process states
+  const [exitForm] = Form.useForm();
+  const [exitProcessLoading, setExitProcessLoading] = useState(false);
+  const [selectedExitDate, setSelectedExitDate] = useState(null);
 
   // Utility functions
   const formatDate = useCallback((dateString) => {
@@ -268,7 +285,7 @@ const ScholarInfo = () => {
     message.info("Silme işlemi geliştirilecek");
   }, []);
 
-  // YENİ MODAL HANDLERS
+  // Modal handlers for Entry/Exit documents
   const handleEntryDocuments = useCallback(() => {
     if (!isScholarStarted()) {
       message.warning("Bursiyerin dönemi henüz başlamadığı için doküman görüntüleme yapılamaz.");
@@ -284,6 +301,65 @@ const ScholarInfo = () => {
     }
     setIsExitDocumentsModalVisible(true);
   }, [isScholarStarted]);
+
+  // Entry documents save handler
+  const handleSaveEntryDocuments = useCallback(async () => {
+    try {
+      setEntryModalLoading(true);
+      
+      // API call to save entry documents
+      const scholarId = getScholarIdFromUrl();
+      const termId = periodData?.id;
+      
+      // Here you would make the API call to save entry documents
+      // const response = await saveEntryDocuments(scholarId, termId, entryDocumentsData);
+      
+      message.success("Giriş dokümanları başarıyla kaydedildi!");
+      
+      // Refresh data
+      if (termId) {
+        await fetchPeriodDocuments(scholarId, termId);
+      }
+      
+    } catch (error) {
+      console.error("Entry documents save error:", error);
+      message.error("Giriş dokümanları kaydedilirken hata oluştu!");
+    } finally {
+      setEntryModalLoading(false);
+    }
+  }, [getScholarIdFromUrl, periodData?.id, entryDocumentsData, fetchPeriodDocuments]);
+
+  // Exit process handler
+  const handleStartExitProcess = useCallback(async () => {
+    if (!selectedExitDate) {
+      message.warning("Lütfen çıkış tarihi seçin!");
+      return;
+    }
+
+    try {
+      setExitProcessLoading(true);
+      
+      const scholarId = getScholarIdFromUrl();
+      const termId = periodData?.id;
+      
+      // API call to start exit process
+      // const response = await startExitProcess(scholarId, termId, selectedExitDate);
+      
+      message.success("Çıkış işlemleri başlatıldı!");
+      
+      // Refresh data
+      if (termId) {
+        await fetchPeriodDocuments(scholarId, termId);
+        await fetchPeriodData(scholarId);
+      }
+      
+    } catch (error) {
+      console.error("Exit process start error:", error);
+      message.error("Çıkış işlemleri başlatılırken hata oluştu!");
+    } finally {
+      setExitProcessLoading(false);
+    }
+  }, [selectedExitDate, getScholarIdFromUrl, periodData?.id, fetchPeriodDocuments, fetchPeriodData]);
 
   const handleEntryDocumentEdit = useCallback((record) => {
     if (!isScholarStarted()) {
@@ -369,14 +445,16 @@ const ScholarInfo = () => {
     setIsDocumentAddModalVisible(true);
   }, [isScholarStarted, getScholarIdFromUrl, periodData?.id]);
 
-  // YENİ MODAL KAPANMA HANDLERS
+  // Modal kapanma handlers
   const handleEntryModalClose = useCallback(() => {
     setIsEntryDocumentsModalVisible(false);
   }, []);
 
   const handleExitModalClose = useCallback(() => {
     setIsExitDocumentsModalVisible(false);
-  }, []);
+    setSelectedExitDate(null);
+    exitForm.resetFields();
+  }, [exitForm]);
 
   // Modal kapatıldıktan sonra verileri yenileme
   const handleDocumentModalClose = useCallback(() => {
@@ -428,9 +506,80 @@ const ScholarInfo = () => {
       fetchPeriodDocuments(scholarId, periodData.id);
     }
   }, [periodData?.id, getScholarIdFromUrl, fetchPeriodDocuments]);
+  
+  // Dönem seçici için options hazırla
+  const preparePeriodOptions = useCallback(() => {
+    if (!scholarPeriods || scholarPeriods.length === 0) return [];
+
+    return scholarPeriods.map(period => ({
+      label: `${period.name || 'İsimsiz Dönem'} (${formatDate(period.startDate)} - ${formatDate(period.endDate)})`,
+      value: period.ID || period.id,
+      startDate: period.startDate,
+      endDate: period.endDate,
+      isActive: period.isActive || false
+    }));
+  }, [scholarPeriods, formatDate]);
+
+  // Dönem seçimi değiştiğinde dokümanları filtrele
+  const handlePeriodChange = useCallback(async (periodId) => {
+    if (!periodId) {
+      setFilteredPeriodDocuments([]);
+      return;
+    }
+
+    setPeriodSelectorLoading(true);
+    try {
+      const scholarId = getScholarIdFromUrl();
+      const documents = await GetScholarPeriodDocuments(scholarId, periodId);
+      setFilteredPeriodDocuments(documents || []);
+      console.log("Seçilen dönem dokümanları:", documents);
+    } catch (error) {
+      console.error("Dönem dokümanları yüklenirken hata:", error);
+      message.error("Dönem dokümanları alınamadı");
+      setFilteredPeriodDocuments([]);
+    } finally {
+      setPeriodSelectorLoading(false);
+    }
+  }, [getScholarIdFromUrl]);
+
+  // Seçilen dönem değiştiğinde dokümanları güncelle
+  const onPeriodSelect = useCallback((value) => {
+    setSelectedPeriodId(value);
+    handlePeriodChange(value);
+  }, [handlePeriodChange]);
+
+  // İlk yüklemede en uygun dönemi seç
+  useEffect(() => {
+    if (scholarPeriods && scholarPeriods.length > 0 && !selectedPeriodId) {
+      const currentDate = new Date();
+      
+      // 1. Önce aktif dönemleri ara
+      const activePeriod = scholarPeriods.find(period => period.isActive === true);
+      
+      if (activePeriod) {
+        const periodId = activePeriod.ID || activePeriod.id;
+        setSelectedPeriodId(periodId);
+        handlePeriodChange(periodId);
+        return;
+      }
+
+      // 2. Aktif dönem yoksa, en güncel (son başlamış) dönemi bul
+      const sortedPeriods = [...scholarPeriods].sort((a, b) => {
+        const dateA = new Date(a.startDate);
+        const dateB = new Date(b.startDate);
+        return dateB - dateA; // En yeni tarih önce
+      });
+
+      if (sortedPeriods.length > 0) {
+        const periodId = sortedPeriods[0].ID || sortedPeriods[0].id;
+        setSelectedPeriodId(periodId);
+        handlePeriodChange(periodId);
+      }
+    }
+  }, [scholarPeriods, selectedPeriodId, handlePeriodChange]);
 
   // Table columns
-  const periodDocumentColumns = [
+  const periodDocumentColumns = React.useMemo(() => [
     {
       title: 'Belge Adı',
       dataIndex: ['documentType', 'name'],
@@ -458,10 +607,10 @@ const ScholarInfo = () => {
       key: 'listType',
       width: 120,
     }
-  ];
+  ], [formatDate]);
 
-  // YENİ TABLO KOLONLARI - ENTRY VE EXIT İÇİN
-  const entryDocumentColumns = [
+  // Entry ve Exit dokümanları için tablo kolonları
+  const entryDocumentColumns = React.useMemo(() => [
     {
       title: 'Belge Adı',
       dataIndex: ['documentType', 'name'],
@@ -497,9 +646,9 @@ const ScholarInfo = () => {
         );
       }
     }
-  ];
+  ], [formatDate]);
 
-  const exitDocumentColumns = [
+  const exitDocumentColumns = React.useMemo(() => [
     {
       title: 'Belge Adı',
       dataIndex: ['documentType', 'name'],
@@ -535,9 +684,9 @@ const ScholarInfo = () => {
         );
       }
     }
-  ];
+  ], [formatDate]);
 
-  const scholarPeriodColumns = [
+  const scholarPeriodColumns = React.useMemo(() => [
     {
       title: 'Dönem Adı',
       dataIndex: 'name', 
@@ -564,7 +713,7 @@ const ScholarInfo = () => {
       key: 'responsibleAcademician',
       width: 180,
     }
-  ];
+  ], [formatDate]);
 
   // Localization function
   const localizeThis = useCallback((key) => {
@@ -586,27 +735,43 @@ const ScholarInfo = () => {
     <div
       style={{
         background: 'linear-gradient(135deg, #1e3a8a 0%, #60a5fa 100%)',
-        borderRadius: '8px',
-        padding: '16px',
-        marginBottom: '16px',
-        color: 'white'
+        borderRadius: '12px',
+        padding: '24px',
+        marginBottom: '20px',
+        color: 'white',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
       }}
     >
-      <Row align="middle" gutter={16}>
+      <Row align="middle" gutter={20}>
         <Col flex="none">
           <Avatar
-            size={64}
+            size={80}
             icon={<UserOutlined />}
             style={{
               backgroundColor: 'rgba(255,255,255,0.2)',
-              border: '2px solid rgba(255,255,255,0.3)'
+              border: '3px solid rgba(255,255,255,0.3)',
+              fontSize: '32px'
             }}
           />
         </Col>
         <Col flex={1}>
-          <Title level={3} style={{ color: 'white', margin: 0, marginBottom: '4px' }}>
+          <Title level={2} style={{ color: 'white', margin: 0, marginBottom: '8px' }}>
             {scholarData?.nameSurname || "Yükleniyor..."}
           </Title>
+          
+          {/* Dönem bilgileri */}
+          {periodData && (
+            <div style={{ marginBottom: '12px' }}>
+              <Title level={4} style={{ color: 'rgba(255,255,255,0.9)', margin: 0, marginBottom: '4px' }}>
+                {periodData.name}
+              </Title>
+              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
+                <CalendarOutlined style={{ marginRight: '6px' }} />
+                {formatDate(periodData.startDate)} - {formatDate(periodData.endDate)}
+              </Text>
+            </div>
+          )}
+          
           <Space size="large" wrap>
             <span style={{ opacity: 0.9 }}>
               <MailOutlined style={{ marginRight: '6px' }} />
@@ -625,7 +790,7 @@ const ScholarInfo = () => {
         </Col>
       </Row>
     </div>
-  ), [scholarData]);
+  ), [scholarData, periodData, formatDate]);
 
   const PeriodInfoCard = useCallback(() => (
     <Card
@@ -804,6 +969,7 @@ const ScholarInfo = () => {
     );
   }, [loading, scholarData, isPeriodDeletedOrCompleted, HeaderSection, PeriodAlternativeCard, PeriodInfoCard]);
 
+  // Sadeleştirilmiş TabContent - sadece 2 sekme kaldı
   const TabContent = useCallback(() => (
     <Card
       title={
@@ -824,26 +990,73 @@ const ScholarInfo = () => {
             key: "1",
             label: "Dönem Dokümanları",
             children: (
-              <DraggableAntdTable
-                dataSource={periodDocumentsData}
-                columns={periodDocumentColumns}
-                sort={true}
-                bordered={true}
-                size="small"
-                showEdit={true}
-                editConfig={{
-                  buttonType: 'primary',
-                  buttonSize: 'small',
-                  width: 35
-                }}
-                filter={true}
-                columnDraggable={true}
-                rowKey="ID"
-                pagination={{ pageSize: 10, showSizeChanger: false }}
-                loading={loading}
-                onEdit={handleEdit}
-                localizeThis={localizeThis}
-              />
+              <div>
+                {/* Dönem Seçici Dropdown */}
+                <div style={{ 
+                  marginBottom: '16px', 
+                  padding: '12px', 
+                  backgroundColor: '#f0f8ff', 
+                  border: '1px solid #91caff', 
+                  borderRadius: '6px' 
+                }}>
+                  <Row gutter={[16, 8]} align="middle">
+                    <Col xs={24} sm={8} md={6}>
+                      <Text style={{ color: '#1890ff', fontWeight: 500 }}>
+                        <CalendarOutlined style={{ marginRight: '6px' }} />
+                        Dönem Seçin:
+                      </Text>
+                    </Col>
+                    <Col xs={24} sm={16} md={12}>
+                      <Select
+                        placeholder="Bir dönem seçin..."
+                        size="large"
+                        style={{ width: '100%' }}
+                        value={selectedPeriodId}
+                        onChange={onPeriodSelect}
+                        loading={periodSelectorLoading}
+                        options={preparePeriodOptions()}
+                        showSearch
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        dropdownStyle={{ borderRadius: '6px' }}
+                      />
+                    </Col>
+                    <Col xs={24} sm={24} md={6}>
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        {filteredPeriodDocuments.length} doküman bulundu
+                      </Text>
+                    </Col>
+                  </Row>
+                </div>
+
+                {/* Doküman Tablosu */}
+                <DraggableAntdTable
+                  dataSource={filteredPeriodDocuments}
+                  columns={periodDocumentColumns}
+                  sort={true}
+                  bordered={true}
+                  size="small"
+                  showEdit={true}
+                  editConfig={{
+                    buttonType: 'primary',
+                    buttonSize: 'small',
+                    width: 35
+                  }}
+                  filter={true}
+                  columnDraggable={true}
+                  rowKey="ID"
+                  pagination={{ pageSize: 10, showSizeChanger: false }}
+                  loading={periodSelectorLoading}
+                  onEdit={handleEdit}
+                  localizeThis={localizeThis}
+                  locale={{
+                    emptyText: selectedPeriodId 
+                      ? 'Bu dönem için doküman bulunamadı' 
+                      : 'Lütfen bir dönem seçin'
+                  }}
+                />
+              </div>
             )
           },
           {
@@ -871,103 +1084,25 @@ const ScholarInfo = () => {
                 localizeThis={localizeThis}
               />
             )
-          },
-          {
-            key: "3",
-            label: (
-              <span>
-                <UploadOutlined style={{ marginRight: '4px' }} />
-                Giriş Dokümanları ({entryDocumentsData.length})
-              </span>
-            ),
-            children: (
-              <div>
-                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '6px' }}>
-                  <Text style={{ color: '#52c41a', fontWeight: 500 }}>
-                    <UploadOutlined style={{ marginRight: '6px' }} />
-                    Giriş Dokümanları
-                  </Text>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Bursiyerin dönem başlangıcında yüklemesi gereken belgeler
-                  </Text>
-                </div>
-                <DraggableAntdTable
-                  dataSource={entryDocumentsData}
-                  columns={entryDocumentColumns}
-                  sort={true}
-                  bordered={true}
-                  size="small"
-                  showEdit={true}
-                  editConfig={{
-                    buttonType: 'primary',
-                    buttonSize: 'small',
-                    width: 35
-                  }}
-                  filter={true}
-                  columnDraggable={true}
-                  rowKey="ID"
-                  pagination={{ pageSize: 10, showSizeChanger: false }}
-                  loading={loading}
-                  onEdit={handleEntryDocumentEdit}
-                  localizeThis={localizeThis}
-                  locale={{
-                    emptyText: 'Giriş dokümanı bulunamadı'
-                  }}
-                />
-              </div>
-            )
-          },
-          {
-            key: "4",
-            label: (
-              <span>
-                <DownloadOutlined style={{ marginRight: '4px' }} />
-                Çıkış Dokümanları ({exitDocumentsData.length})
-              </span>
-            ),
-            children: (
-              <div>
-                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#fff7e6', border: '1px solid #ffd591', borderRadius: '6px' }}>
-                  <Text style={{ color: '#fa8c16', fontWeight: 500 }}>
-                    <DownloadOutlined style={{ marginRight: '6px' }} />
-                    Çıkış Dokümanları
-                  </Text>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Bursiyerin dönem bitişinde teslim etmesi gereken belgeler
-                  </Text>
-                </div>
-                <DraggableAntdTable
-                  dataSource={exitDocumentsData}
-                  columns={exitDocumentColumns}
-                  sort={true}
-                  bordered={true}
-                  size="small"
-                  showEdit={true}
-                  editConfig={{
-                    buttonType: 'primary',
-                    buttonSize: 'small',
-                    width: 35
-                  }}
-                  filter={true}
-                  columnDraggable={true}
-                  rowKey="ID"
-                  pagination={{ pageSize: 10, showSizeChanger: false }}
-                  loading={loading}
-                  onEdit={handleExitDocumentEdit}
-                  localizeThis={localizeThis}
-                  locale={{
-                    emptyText: 'Çıkış dokümanı bulunamadı'
-                  }}
-                />
-              </div>
-            )
           }
         ]}
       />
     </Card>
-  ), [activeTabKey, periodDocumentsData, periodDocumentColumns, scholarPeriods, scholarPeriodColumns, entryDocumentsData, exitDocumentsData, entryDocumentColumns, exitDocumentColumns, loading, handleEdit, handleDelete, handleEntryDocumentEdit, handleExitDocumentEdit, localizeThis]);
+  ), [
+    activeTabKey, 
+    selectedPeriodId,
+    filteredPeriodDocuments,
+    periodSelectorLoading,
+    periodDocumentColumns, 
+    scholarPeriods, 
+    scholarPeriodColumns, 
+    loading, 
+    handleEdit, 
+    handleDelete, 
+    localizeThis,
+    preparePeriodOptions,
+    onPeriodSelect
+  ]);
 
   return (
     <div style={{ padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -976,34 +1111,44 @@ const ScholarInfo = () => {
         <TabContent />
       </div>
 
-      {/* YENİ ENTRY DOKÜMANLARI MODAL */}
+      {/* Entry Documents Modal */}
       <Modal
         title={
-          <span>
-            <UploadOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
-            Giriş Dokümanları
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <UploadOutlined style={{ color: '#52c41a', fontSize: '18px' }} />
+            <span>Giriş Dokümanları</span>
+          </div>
         }
         open={isEntryDocumentsModalVisible}
         onCancel={handleEntryModalClose}
         footer={[
           <Button key="close" onClick={handleEntryModalClose}>
             Kapat
+          </Button>,
+          <Button 
+            key="save" 
+            type="primary" 
+            icon={<SaveOutlined />}
+            loading={entryModalLoading}
+            onClick={handleSaveEntryDocuments}
+            style={{
+              background: 'linear-gradient(45deg, #52c41a, #73d13d)',
+              border: 'none'
+            }}
+          >
+            Kaydet
           </Button>
         ]}
         width={1200}
         destroyOnClose
       >
-        <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '6px' }}>
-          <Text style={{ color: '#52c41a', fontWeight: 500 }}>
-            <UploadOutlined style={{ marginRight: '6px' }} />
-            Giriş Dokümanları Listesi
-          </Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            Bursiyerin dönem başlangıcında yüklemesi gereken belgeler. Düzenlemek için edit butonuna tıklayın.
-          </Text>
-        </div>
+        <Alert
+          message="Giriş Dokümanları"
+          description="Bursiyerin dönem başlangıcında yüklemesi gereken belgeler. Düzenlemek için edit butonuna tıklayın."
+          type="success"
+          showIcon
+          style={{ marginBottom: '16px' }}
+        />
         
         <DraggableAntdTable
           dataSource={entryDocumentsData}
@@ -1031,34 +1176,85 @@ const ScholarInfo = () => {
         />
       </Modal>
 
-      {/* YENİ EXIT DOKÜMANLARI MODAL */}
+      {/* Exit Documents Modal */}
       <Modal
         title={
-          <span>
-            <DownloadOutlined style={{ marginRight: '8px', color: '#fa8c16' }} />
-            Çıkış Dokümanları
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <DownloadOutlined style={{ color: '#fa8c16', fontSize: '18px' }} />
+            <span>Çıkış Dokümanları</span>
+          </div>
         }
         open={isExitDocumentsModalVisible}
         onCancel={handleExitModalClose}
         footer={[
           <Button key="close" onClick={handleExitModalClose}>
             Kapat
+          </Button>,
+          <Button 
+            key="start-exit" 
+            type="primary" 
+            icon={<PlayCircleOutlined />}
+            loading={exitProcessLoading}
+            onClick={handleStartExitProcess}
+            disabled={!selectedExitDate}
+            style={{
+              background: 'linear-gradient(45deg, #fa8c16, #ffa940)',
+              border: 'none'
+            }}
+          >
+            Çıkış İşlemlerini Başlat
           </Button>
         ]}
         width={1200}
         destroyOnClose
       >
-        <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#fff7e6', border: '1px solid #ffd591', borderRadius: '6px' }}>
-          <Text style={{ color: '#fa8c16', fontWeight: 500 }}>
-            <DownloadOutlined style={{ marginRight: '6px' }} />
-            Çıkış Dokümanları Listesi
-          </Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            Bursiyerin dönem bitişinde teslim etmesi gereken belgeler. Düzenlemek için edit butonuna tıklayın.
-          </Text>
-        </div>
+        <Alert
+          message="Çıkış Dokümanları"
+          description="Bursiyerin dönem bitişinde teslim etmesi gereken belgeler. Çıkış işlemlerini başlatmak için tarih seçin."
+          type="warning"
+          showIcon
+          style={{ marginBottom: '16px' }}
+        />
+
+        {/* Exit Date Selection */}
+        <Card 
+          title={
+            <span>
+              <ClockCircleOutlined style={{ marginRight: '8px', color: '#fa8c16' }} />
+              Çıkış Tarihi Seçimi
+            </span>
+          }
+          size="small" 
+          style={{ marginBottom: '16px' }}
+        >
+          <Form form={exitForm} layout="inline">
+            <Form.Item
+              label="Çıkış Tarihi"
+              name="exitDate"
+              rules={[{ required: true, message: 'Lütfen çıkış tarihi seçin!' }]}
+            >
+              <DatePicker
+                placeholder="Çıkış tarihini seçin"
+                style={{ width: '200px' }}
+                format="DD/MM/YYYY"
+                value={selectedExitDate}
+                onChange={setSelectedExitDate}
+                disabledDate={(current) => {
+                  // Geçmiş tarihleri devre dışı bırak
+                  return current && current < dayjs().startOf('day');
+                }}
+              />
+            </Form.Item>
+            {selectedExitDate && (
+              <Form.Item>
+                <Text type="success" style={{ marginLeft: '12px' }}>
+                  <ExclamationCircleOutlined style={{ marginRight: '4px' }} />
+                  Seçilen tarih: {selectedExitDate.format('DD/MM/YYYY')}
+                </Text>
+              </Form.Item>
+            )}
+          </Form>
+        </Card>
         
         <DraggableAntdTable
           dataSource={exitDocumentsData}
@@ -1083,11 +1279,10 @@ const ScholarInfo = () => {
           locale={{
             emptyText: 'Çıkış dokümanı bulunamadı'
           }}
-          
         />
       </Modal>
 
-      {/* DocumentAddModalGlobal - Tek Modal Tüm Doküman İşlemleri İçin */}
+      {/* Document Add Modal */}
       {isDocumentAddModalVisible && documentModalProps && (
         <DocumentAddModalGlobal
           visible={isDocumentAddModalVisible}

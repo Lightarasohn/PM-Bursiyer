@@ -33,55 +33,60 @@ const BursiyerEkle = () => {
   const [allRequiredDocuments, setAllRequiredDocuments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const getAllRequiredDocuments = async () => {
-    try {
-      const allDocuments = await GetAllDocumentsAPI();
-      const requiredDocumentsConstants = await GetAllRequiredDocumentsAPI();
+ const getAllRequiredDocuments = async () => {
+  try {
+    const allDocuments = await GetAllDocumentsAPI();
+    const requiredDocumentsConstants = await GetAllRequiredDocumentsAPI();
 
-      const allRequiredIds = new Set();
+    console.log("All Documents:", allDocuments); // Debug için
+    console.log("Required Documents Constants:", requiredDocumentsConstants); // Debug için
 
-      requiredDocumentsConstants.forEach((item) => {
-        const valueInt = item.valueText.split(",").map((id) => parseInt(id));
-        const requiredDocumentsObjects = allDocuments
-          .filter((x) => valueInt.find((y) => y === x.id))
-          .map((item) => {
-            return { label: item.name, value: item.id };
-          });
+    const allRequiredIds = new Set();
 
-        valueInt.forEach((id) => allRequiredIds.add(id));
-
-        switch (item.constantName) {
-          case "requiredDocumentTypesOnEntry":
-            setRequiredDocumentsOnEntry(requiredDocumentsObjects);
-            break;
-          case "requiredDocumentTypesOnAttendance":
-            setRequiredDocumentsOnAttendance(requiredDocumentsObjects);
-            break;
-          case "requiredDocumentTypesOnExit":
-            setRequiredDocumentsOnExit(requiredDocumentsObjects);
-            break;
-          default:
-            break;
-        }
-      });
-
-      const uniqueAllRequiredDocuments = allDocuments.filter((doc) =>
-        allRequiredIds.has(doc.id)
-      );
-
-      setAllRequiredDocuments(
-        uniqueAllRequiredDocuments.map((item) => {
+    requiredDocumentsConstants.forEach((item) => {
+      const valueInt = item.valueText.split(",").map((id) => parseInt(id));
+      const requiredDocumentsObjects = allDocuments
+        .filter((x) => valueInt.includes(x.id)) // find yerine includes kullanın
+        .map((item) => {
           return { label: item.name, value: item.id };
-        })
-      );
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-      messageApi.open({
-        type: "error",
-        content: "Failed to load documents. Please refresh the page.",
-      });
-    }
-  };
+        });
+
+      console.log(`${item.constantName} Documents:`, requiredDocumentsObjects); // Debug için
+
+      valueInt.forEach((id) => allRequiredIds.add(id));
+
+      switch (item.constantName) {
+        case "requiredDocumentTypesOnEntry":
+          setRequiredDocumentsOnEntry(requiredDocumentsObjects);
+          break;
+        case "requiredDocumentTypesOnAttendance":
+          setRequiredDocumentsOnAttendance(requiredDocumentsObjects);
+          break;
+        case "requiredDocumentTypesOnExit":
+          setRequiredDocumentsOnExit(requiredDocumentsObjects);
+          break;
+        default:
+          break;
+      }
+    });
+
+    const uniqueAllRequiredDocuments = allDocuments.filter((doc) =>
+      allRequiredIds.has(doc.id)
+    );
+
+    setAllRequiredDocuments(
+      uniqueAllRequiredDocuments.map((item) => {
+        return { label: item.name, value: item.id };
+      })
+    );
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    messageApi.open({
+      type: "error",
+      content: "Failed to load documents. Please refresh the page.",
+    });
+  }
+};
 
   useEffect(() => {
     getAllRequiredDocuments();
@@ -416,139 +421,127 @@ const BursiyerEkle = () => {
         </Row>
 
         {/* Documents Section */}
-        <Row style={{ marginTop: '24px' }}>
-          <Col span={24}>
-            <Card
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  
-                  <Typography.Title level={4} style={{ margin: 0 }}>
-                    Required Documents
-                  </Typography.Title>
-                </div>
-              }
-              style={{
-                borderRadius: '8px',
-                border: '1px solid #fff7e6',
-                background: '#fafafa'
-              }}
-              headStyle={{ background: '#fff7e6', borderRadius: '8px 8px 0 0' }}
-            >
-              <Row gutter={[24, 16]} style={{ padding: '8px 0' }}>
-                <Col xs={24} md={8}>
-                  <div style={{
-                    padding: '12px',
-                    background: '#f6ffed',
-                    borderRadius: '6px',
-                    border: '1px solid #b7eb8f',
-                    marginBottom: '8px'
-                  }}>
-                    <Typography.Text strong style={{ color: '#52c41a', display: 'block', marginBottom: '4px' }}>
-                      Entry Documents
-                    </Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                      Documents required at the beginning of the term
-                    </Typography.Text>
-                  </div>
-                  <Form.Item
-                    name="entryDocuments"
-                    rules={[
-                      {
-                        required: true,
-                        message: 'Please select entry documents',
-                      },
-                    ]}
-                    style={{ marginBottom: '16px' }}
-                  >
-                    <Select
-                      mode="multiple"
-                      placeholder="Select entry documents"
-                      size="large"
-                      style={{ borderRadius: '6px' }}
-                      options={allRequiredDocuments}
-                      onChange={handleChange}
-                      
-                    />
-                  </Form.Item>
-                </Col>
+        <Row gutter={[24, 16]} style={{ padding: '8px 0' }}>
+  <Col xs={24} md={8}>
+    <div style={{
+      padding: '12px',
+      background: '#f6ffed',
+      borderRadius: '6px',
+      border: '1px solid #b7eb8f',
+      marginBottom: '8px'
+    }}>
+      <Typography.Text strong style={{ color: '#52c41a', display: 'block', marginBottom: '4px' }}>
+        Entry Documents
+      </Typography.Text>
+      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+        Documents required at the beginning of the term
+      </Typography.Text>
+    </div>
+    <Form.Item
+      name="entryDocuments"
+      rules={[
+        {
+          required: true,
+          message: 'Please select entry documents',
+        },
+      ]}
+      style={{ marginBottom: '16px' }}
+    >
+      <Select
+        mode="multiple"
+        placeholder="Select entry documents"
+        size="large"
+        style={{ borderRadius: '6px' }}
+        options={requiredDocumentsOnEntry} // Bu satır değişti - allRequiredDocuments yerine spesifik kategori
+        onChange={handleChange}
+        showSearch
+        filterOption={(input, option) =>
+          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+        }
+      />
+    </Form.Item>
+  </Col>
 
-                <Col xs={24} md={8}>
-                  <div style={{
-                    padding: '12px',
-                    background: '#fff1f0',
-                    borderRadius: '6px',
-                    border: '1px solid #ffadd2',
-                    marginBottom: '8px'
-                  }}>
-                    <Typography.Text strong style={{ color: '#f5222d', display: 'block', marginBottom: '4px' }}>
-                      Exit Documents
-                    </Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                      Documents required at the end of the term
-                    </Typography.Text>
-                  </div>
-                  <Form.Item
-                    name="exitDocuments"
-                    rules={[
-                      {
-                        required: true,
-                        message: 'Please select exit documents',
-                      },
-                    ]}
-                    style={{ marginBottom: '16px' }}
-                  >
-                    <Select
-                      mode="multiple"
-                      placeholder="Select exit documents"
-                      size="large"
-                      style={{ borderRadius: '6px' }}
-                      options={allRequiredDocuments}
-                      onChange={handleChange}
-                      
-                    />
-                  </Form.Item>
-                </Col>
+  <Col xs={24} md={8}>
+    <div style={{
+      padding: '12px',
+      background: '#fff1f0',
+      borderRadius: '6px',
+      border: '1px solid #ffadd2',
+      marginBottom: '8px'
+    }}>
+      <Typography.Text strong style={{ color: '#f5222d', display: 'block', marginBottom: '4px' }}>
+        Exit Documents
+      </Typography.Text>
+      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+        Documents required at the end of the term
+      </Typography.Text>
+    </div>
+    <Form.Item
+      name="exitDocuments"
+      rules={[
+        {
+          required: true,
+          message: 'Please select exit documents',
+        },
+      ]}
+      style={{ marginBottom: '16px' }}
+    >
+      <Select
+        mode="multiple"
+        placeholder="Select exit documents"
+        size="large"
+        style={{ borderRadius: '6px' }}
+        options={requiredDocumentsOnExit} // Bu satır değişti - spesifik kategori
+        onChange={handleChange}
+        showSearch
+        filterOption={(input, option) =>
+          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+        }
+      />
+    </Form.Item>
+  </Col>
 
-                <Col xs={24} md={8}>
-                  <div style={{
-                    padding: '12px',
-                    background: '#f9f0ff',
-                    borderRadius: '6px',
-                    border: '1px solid #d3adf7',
-                    marginBottom: '8px'
-                  }}>
-                    <Typography.Text strong style={{ color: '#722ed1', display: 'block', marginBottom: '4px' }}>
-                      Ongoing Documents
-                    </Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
-                      Documents required periodically during the term
-                    </Typography.Text>
-                  </div>
-                  <Form.Item
-                    name="ongoingDocuments"
-                    rules={[
-                      {
-                        required: true,
-                        message: 'Please select ongoing documents',
-                      },
-                    ]}
-                    style={{ marginBottom: '16px' }}
-                  >
-                    <Select
-                      mode="multiple"
-                      placeholder="Select ongoing documents"
-                      size="large"
-                      style={{ borderRadius: '6px' }}
-                      options={allRequiredDocuments}
-                      onChange={handleChange}
-                      
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        </Row>
+  <Col xs={24} md={8}>
+    <div style={{
+      padding: '12px',
+      background: '#f9f0ff',
+      borderRadius: '6px',
+      border: '1px solid #d3adf7',
+      marginBottom: '8px'
+    }}>
+      <Typography.Text strong style={{ color: '#722ed1', display: 'block', marginBottom: '4px' }}>
+        Ongoing Documents
+      </Typography.Text>
+      <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+        Documents required periodically during the term
+      </Typography.Text>
+    </div>
+    <Form.Item
+      name="ongoingDocuments"
+      rules={[
+        {
+          required: true,
+          message: 'Please select ongoing documents',
+        },
+      ]}
+      style={{ marginBottom: '16px' }}
+    >
+      <Select
+        mode="multiple"
+        placeholder="Select ongoing documents"
+        size="large"
+        style={{ borderRadius: '6px' }}
+        options={requiredDocumentsOnAttendance} // Bu satır değişti - spesifik kategori
+        onChange={handleChange}
+        showSearch
+        filterOption={(input, option) =>
+          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+        }
+      />
+    </Form.Item>
+  </Col>
+</Row>
 
         {/* Submit Button */}
         <Row justify="center" style={{ marginTop: '32px' }}>

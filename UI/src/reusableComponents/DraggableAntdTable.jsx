@@ -229,7 +229,7 @@ const DraggableAntdTable = ({
             display: "flex", 
             alignItems: "center", 
             justifyContent: "center", 
-            minWidth: "32px",
+            minWidth: "15px",
             padding: "4px 6px"
           }}
         >
@@ -265,7 +265,7 @@ const DraggableAntdTable = ({
               display: "flex", 
               alignItems: "center", 
               justifyContent: "center", 
-              minWidth: "32px",
+              minWidth: "15px",
               padding: "4px 6px"
             }}
           >

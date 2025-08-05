@@ -1,6 +1,6 @@
 const GetAllDocumentsAPI = async () => {
      const base = import.meta.env.VITE_API_BASE_URL;
-    const url = `${base}api/document`;
+    const url = `${base}api/document-type`;
     var requestOptions = {
      
         method: "GET"
