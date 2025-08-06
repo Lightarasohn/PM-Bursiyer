@@ -17,5 +17,7 @@ namespace API.Interfaces
         TermsOfScholar AddTermsOfScholar(TermsOfScholarDTO termsOfScholarDTO, bool SAVE_CHANGES);
         Task<TermsOfScholar> UpdateTermsOfScholarAsync(TermsOfScholarDTO termsOfScholarDto, int scholarId, int termId);
         Task<TermsOfScholar> DeleteTermsOfScholarAsync(int scholarId, int termId);
+        Task<TermsOfScholar> CheckInScholarAsync(int scholarId, int termId);
+        Task<TermsOfScholar> CheckOutScholarAsync(int scholarId, int termId, DateTime endDate);
     }
 }

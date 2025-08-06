@@ -103,6 +103,19 @@ namespace API.Controllers
                 return BadRequest($"Bir hata oluştu: {ex.Message}");
             }
         }
+        [HttpPost("checkin")]
+        public async Task<IActionResult> CheckInScholar([FromQuery] int scholarId, [FromQuery] int termId)
+        {
+            var result = await _termsOfScholarRepo.CheckInScholarAsync(scholarId, termId);
+            return Ok(result);
+        }
+
+        [HttpPost("checkout")]
+        public async Task<IActionResult> CheckOutScholar([FromQuery] int scholarId, [FromQuery] int termId, [FromQuery] DateTime endDate)
+        {
+            var result = await _termsOfScholarRepo.CheckOutScholarAsync(scholarId, termId, endDate);
+            return Ok(result);
+        }
 
         [HttpPut("{scholarId}/{termId}")]
         public async Task<IActionResult> Update([FromBody] TermsOfScholarDTO dto, int scholarId, int termId)

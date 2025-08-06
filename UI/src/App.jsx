@@ -6,6 +6,7 @@ import MainLayout from './forms/MasterPage/MainLayout';
 import BursiyerListesi from './forms/Bursiyer/ScholarList';
 import BursiyerEkle from './forms/Bursiyer/AddScholar';
 import ScholarInfo from './forms/Bursiyer/scholarInfo';
+import ScholarEdit from './forms/Bursiyer/ScholarEdit';
 import Test from './forms/TestPages/Test';
 import AddPeriodToScholar from './forms/Bursiyer/AddPeriodToScholar';
 
@@ -27,6 +28,7 @@ function App() {
           <Route path="bursiyer-ekle" element={<BursiyerEkle />} />
           <Route path="scholar-info" element={<ScholarInfo />} />
           <Route path="add-period-to-scholar" element={<AddPeriodToScholar />} />
+          <Route path="update-scholar" element={<ScholarEdit />} />
         </Route>
       </Routes>
     </BrowserRouter>
