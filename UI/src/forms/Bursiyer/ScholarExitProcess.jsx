@@ -12,18 +12,21 @@ import {
   Form,
   DatePicker,
   message,
+  List,
 } from 'antd';
 import {
   DownloadOutlined,
   PlayCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
+  WarningOutlined,
+  FileOutlined,
 } from '@ant-design/icons';
 import DraggableAntdTable from '../../reusableComponents/DraggableAntdTable';
 import DocumentAddModalGlobal from '../../reusableComponents/DocumentAddModalGlobal';
 import dayjs from 'dayjs';
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 const ScholarExitProcess = ({
   visible,
@@ -39,7 +42,9 @@ const ScholarExitProcess = ({
   localizeThis,
   // API functions
   performScholarCheckout,
-  refreshData
+  refreshData,
+  // Document functions
+  changeRealUploadDate
 }) => {
   // States
   const [checkoutProcessLoading, setCheckoutProcessLoading] = useState(false);
@@ -48,6 +53,23 @@ const ScholarExitProcess = ({
   const [exitModalLoading] = useState(false);
   const [selectedExitDate, setSelectedExitDate] = useState(null);
   const [exitForm] = Form.useForm();
+  const [showMissingDocsModal, setShowMissingDocsModal] = useState(false);
+  const [missingDocuments, setMissingDocuments] = useState([]);
+
+  // localizeThis fonksiyonunu tanımlayalım eğer props'tan gelmemişse
+  const defaultLocalizeThis = (key) => {
+    const translations = {
+      editTitle: 'Düzenle',
+      deleteTitle: 'Sil',
+      deleteConfirmTitle: 'Emin misiniz?',
+      deleteConfirmDescription: 'Bu kaydı silmek istediğinizden emin misiniz?',
+      deleteConfirmOkText: 'Evet',
+      deleteConfirmCancelText: 'Hayır',
+    };
+    return translations[key] || key;
+  };
+
+  const localizeThisFunc = localizeThis || defaultLocalizeThis;
 
   // Get URL parameter
   const getScholarIdFromUrl = useCallback(() => {
@@ -57,7 +79,7 @@ const ScholarExitProcess = ({
 
   // Check if all exit documents are uploaded
   const areAllExitDocumentsUploaded = useCallback(() => {
-    if (!exitDocumentsData || exitDocumentsData.length === 0) return false;
+    if (!exitDocumentsData || exitDocumentsData.length === 0) return true; // Eğer çıkış dokümanı yoksa true döner
     return exitDocumentsData.every(doc => doc.realUploadDate !== null && doc.realUploadDate !== undefined);
   }, [exitDocumentsData]);
 
@@ -65,17 +87,68 @@ const ScholarExitProcess = ({
   const getMissingDocumentsBeforeExitDate = useCallback((exitDate) => {
     if (!periodDocumentsData || !exitDate) return [];
     
-    const exitDateTime = new Date(exitDate);
+    // exitDate bir dayjs objesi, onu Date'e çevir
+    const exitDateTime = exitDate.toDate ? exitDate.toDate() : new Date(exitDate);
+    
     return periodDocumentsData.filter(doc => {
+      // Beklenen yükleme tarihi var mı?
+      if (!doc.expectedUploadDate) return false;
+      
+      // expectedUploadDate string olduğu için Date'e çevir
       const expectedDate = new Date(doc.expectedUploadDate);
-      const hasRealUpload = doc.realUploadDate !== null && doc.realUploadDate !== undefined;
-      return expectedDate < exitDateTime && !hasRealUpload;
+      
+      // Geçersiz tarih kontrolü
+      if (isNaN(expectedDate.getTime()) || isNaN(exitDateTime.getTime())) {
+        console.warn('Invalid date detected:', { 
+          expectedDate: doc.expectedUploadDate, 
+          exitDate: exitDate 
+        });
+        return false;
+      }
+      
+      // Gerçek yükleme tarihi var mı?
+      const hasRealUpload = doc.realUploadDate !== null && 
+                           doc.realUploadDate !== undefined && 
+                           doc.realUploadDate !== '' && 
+                           doc.realUploadDate.trim && 
+                           doc.realUploadDate.trim() !== '';
+      
+      // Çıkış dokümanları bu kontrolden muaf (sadece ongoing dokümanları kontrol et)
+      const isExitDocument = doc.listType?.toLowerCase() === 'exit';
+      const isEntryDocument = doc.listType?.toLowerCase() === 'entry';
+      
+      // Sadece ongoing (normal) dokümanları kontrol et
+      const isOngoingDocument = !isExitDocument && !isEntryDocument;
+      
+      // Koşul: Beklenen tarih çıkış tarihinden önce VE gerçek yükleme yok VE ongoing doküman
+      // ÖNEMLI: Tarihleri sadece gün bazında karşılaştıralım (saat önemsiz)
+      const expectedDateOnly = new Date(expectedDate.getFullYear(), expectedDate.getMonth(), expectedDate.getDate());
+      const exitDateOnly = new Date(exitDateTime.getFullYear(), exitDateTime.getMonth(), exitDateTime.getDate());
+      
+      const shouldBeUploadedBeforeExit = expectedDateOnly < exitDateOnly;
+      
+      console.log('Document check:', {
+        docName: doc.documentType?.name || 'Unknown',
+        expectedDateString: doc.expectedUploadDate,
+        expectedDateParsed: expectedDate.toISOString().split('T')[0],
+        exitDateString: exitDate.format ? exitDate.format('YYYY-MM-DD') : exitDate,
+        exitDateParsed: exitDateTime.toISOString().split('T')[0],
+        expectedDateOnly: expectedDateOnly.toISOString().split('T')[0],
+        exitDateOnly: exitDateOnly.toISOString().split('T')[0],
+        hasRealUpload,
+        isOngoingDocument,
+        shouldBeUploadedBeforeExit,
+        listType: doc.listType,
+        willBeFiltered: shouldBeUploadedBeforeExit && !hasRealUpload && isOngoingDocument
+      });
+      
+      return shouldBeUploadedBeforeExit && !hasRealUpload && isOngoingDocument;
     });
   }, [periodDocumentsData]);
 
   // Get upload progress for exit documents
   const getExitUploadProgress = useCallback(() => {
-    if (!exitDocumentsData || exitDocumentsData.length === 0) return { uploaded: 0, total: 0, percentage: 0 };
+    if (!exitDocumentsData || exitDocumentsData.length === 0) return { uploaded: 0, total: 0, percentage: 100 };
     
     const uploaded = exitDocumentsData.filter(doc => doc.realUploadDate).length;
     const total = exitDocumentsData.length;
@@ -91,37 +164,37 @@ const ScholarExitProcess = ({
       return;
     }
 
-    if (!areAllExitDocumentsUploaded()) {
+    console.log('=== ÇIKİŞ İŞLEMİ KONTROL BAŞLADI ===');
+    console.log('Seçilen çıkış tarihi:', selectedExitDate.format('DD/MM/YYYY'));
+    console.log('Tüm dönem dokümanları:', periodDocumentsData);
+    
+    // Çıkış tarihinden önce yüklenmesi gereken eksik dokümanları kontrol et
+    const missingDocs = getMissingDocumentsBeforeExitDate(selectedExitDate);
+    
+    console.log('Eksik dokümanlar:', missingDocs);
+    console.log('Eksik doküman sayısı:', missingDocs.length);
+    
+    if (missingDocs.length > 0) {
+      console.log('Eksik doküman bulundu, uyarı modalı açılıyor...');
+      // Eksik dokümanları state'e kaydet ve uyarı modalını göster
+      setMissingDocuments(missingDocs);
+      setShowMissingDocsModal(true);
+      return;
+    }
+
+    // Çıkış dokümanları tamamlanmış mı kontrol et
+    const exitDocsComplete = areAllExitDocumentsUploaded();
+    console.log('Çıkış dokümanları tamamlandı mı?', exitDocsComplete);
+    
+    if (!exitDocsComplete) {
       message.warning("Tüm çıkış dokümanları yüklenmeden çıkış işlemi başlatılamaz!");
       return;
     }
 
-    // Check for missing documents before exit date
-    const missingDocs = getMissingDocumentsBeforeExitDate(selectedExitDate);
-    if (missingDocs.length > 0) {
-      const missingDocNames = missingDocs.map(doc => doc.documentType?.name || 'İsimsiz Doküman').join(', ');
-      Modal.confirm({
-        title: 'Eksik Dokümanlar Uyarısı',
-        icon: <ExclamationCircleOutlined />,
-        content: (
-          <div>
-            <p>Seçilen çıkış tarihinden önce yüklenmesi gereken şu dokümanlar eksik:</p>
-            <p style={{ color: '#ff4d4f', fontWeight: 'bold' }}>{missingDocNames}</p>
-            <p>Yine de çıkış işlemini başlatmak istiyor musunuz?</p>
-          </div>
-        ),
-        okText: 'Devam Et',
-        cancelText: 'İptal',
-        onOk: () => performCheckout(),
-        okButtonProps: {
-          danger: true,
-        },
-      });
-      return;
-    }
-
+    console.log('Tüm kontroller geçildi, çıkış işlemi başlatılıyor...');
+    // Herşey tamamsa çıkış işlemini başlat
     performCheckout();
-  }, [selectedExitDate, areAllExitDocumentsUploaded, getMissingDocumentsBeforeExitDate]);
+  }, [selectedExitDate, getMissingDocumentsBeforeExitDate, areAllExitDocumentsUploaded, periodDocumentsData]);
 
   const performCheckout = useCallback(async () => {
     try {
@@ -162,6 +235,18 @@ const ScholarExitProcess = ({
     exitForm
   ]);
 
+  // Force continue checkout after seeing missing documents warning
+  const handleForceContinueCheckout = useCallback(() => {
+    setShowMissingDocsModal(false);
+    
+    if (!areAllExitDocumentsUploaded()) {
+      message.warning("Tüm çıkış dokümanları yüklenmeden çıkış işlemi başlatılamaz!");
+      return;
+    }
+    
+    performCheckout();
+  }, [areAllExitDocumentsUploaded, performCheckout]);
+
   // Exit document edit handler
   const handleExitDocumentEdit = useCallback((record) => {
     const documentTypeId = record.documentTypeId || 0;
@@ -201,6 +286,29 @@ const ScholarExitProcess = ({
     setIsDocumentAddModalVisible(true);
   }, [getScholarIdFromUrl, periodData?.id]);
 
+  // Handle missing document edit
+  const handleMissingDocumentEdit = useCallback((record) => {
+    // Eksik doküman düzenleme modalını aç
+    const documentTypeId = record.documentTypeId || 0;
+    const recordId = record.id;
+    const scholarId = getScholarIdFromUrl();
+    const termId = periodData?.id;
+
+    setDocumentModalProps({
+      title: "Eksik Doküman Yükleme",
+      moduleType: 6,
+      maxFileSize: 5,
+      documentTypeId,
+      record,
+      recordId,
+      scholarId,
+      termId,
+      listType: record.listType || "default",
+    });
+
+    setIsDocumentAddModalVisible(true);
+  }, [getScholarIdFromUrl, periodData?.id]);
+
   // Document modal handlers
   const handleDocumentsAdded = useCallback((documents) => {
     console.log("Eklenen dökümanlar:", documents);
@@ -216,7 +324,18 @@ const ScholarExitProcess = ({
     }
     
     message.success("Dökümanlar başarıyla eklendi!");
-  }, [periodData?.id, getScholarIdFromUrl, refreshData]);
+    
+    // Eksik dokümanlar modalı açıksa, yeniden kontrol et
+    if (showMissingDocsModal && selectedExitDate) {
+      const updatedMissingDocs = getMissingDocumentsBeforeExitDate(selectedExitDate);
+      setMissingDocuments(updatedMissingDocs);
+      
+      if (updatedMissingDocs.length === 0) {
+        setShowMissingDocsModal(false);
+        message.success("Tüm eksik dokümanlar tamamlandı! Şimdi çıkış işlemini başlatabilirsiniz.");
+      }
+    }
+  }, [periodData?.id, getScholarIdFromUrl, refreshData, showMissingDocsModal, selectedExitDate, getMissingDocumentsBeforeExitDate]);
 
   const handleDocumentModalClose = useCallback(() => {
     setIsDocumentAddModalVisible(false);
@@ -227,6 +346,8 @@ const ScholarExitProcess = ({
   const handleModalClose = useCallback(() => {
     setSelectedExitDate(null);
     exitForm.resetFields();
+    setShowMissingDocsModal(false);
+    setMissingDocuments([]);
     onCancel();
   }, [exitForm, onCancel]);
 
@@ -269,6 +390,42 @@ const ScholarExitProcess = ({
     }
   ], [formatDate]);
 
+  // Missing documents columns for the warning modal
+  const missingDocumentColumns = React.useMemo(() => [
+    {
+      title: 'Belge Adı',
+      dataIndex: ['documentType', 'name'],
+      render: (name) => name || '-',
+      width: 200,
+    },
+    {
+      title: 'Doküman Türü',
+      dataIndex: 'listType',
+      render: (listType) => listType || 'ongoing',
+      width: 120,
+    },
+    {
+      title: 'Beklenen Yükleme Tarihi',
+      dataIndex: 'expectedUploadDate',
+      render: (date) => formatDate(date),
+      width: 160,
+    },
+    {
+      title: 'İşlem',
+      key: 'action',
+      width: 100,
+      render: (_, record) => (
+        <Button 
+          type="primary" 
+          size="small"
+          onClick={() => handleMissingDocumentEdit(record)}
+        >
+          Yükle
+        </Button>
+      )
+    }
+  ], [formatDate, handleMissingDocumentEdit]);
+
   return (
     <>
       <Modal
@@ -290,9 +447,9 @@ const ScholarExitProcess = ({
             icon={<PlayCircleOutlined />}
             loading={checkoutProcessLoading}
             onClick={handleStartCheckoutProcess}
-            disabled={!selectedExitDate || !areAllExitDocumentsUploaded()}
+            disabled={!selectedExitDate} // Sadece çıkış tarihi seçilmesini bekle
             style={{
-              background: (selectedExitDate && areAllExitDocumentsUploaded()) 
+              background: selectedExitDate 
                 ? 'linear-gradient(45deg, #fa8c16, #ffa940)' 
                 : '#d9d9d9',
               border: 'none'
@@ -359,17 +516,6 @@ const ScholarExitProcess = ({
               <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '8px' }}>
                 {getExitUploadProgress().uploaded} / {getExitUploadProgress().total} çıkış dokümanı yüklendi
               </Text>
-              
-              {/* Missing documents warning */}
-              {selectedExitDate && getMissingDocumentsBeforeExitDate(selectedExitDate).length > 0 && (
-                <Alert
-                  message="Eksik Dokümanlar Uyarısı"
-                  description={`Seçilen çıkış tarihinden önce yüklenmesi gereken ${getMissingDocumentsBeforeExitDate(selectedExitDate).length} doküman eksik.`}
-                  type="warning"
-                  showIcon
-                  style={{ marginTop: '8px' }}
-                />
-              )}
             </Col>
           </Row>
         </Card>
@@ -393,11 +539,59 @@ const ScholarExitProcess = ({
           pagination={{ pageSize: 8, showSizeChanger: false }}
           loading={exitModalLoading}
           onEdit={handleExitDocumentEdit}
-          localizeThis={localizeThis}
+          localizeThis={localizeThisFunc}
           locale={{
             emptyText: 'Çıkış dokümanı bulunamadı'
           }}
         />
+      </Modal>
+
+      {/* Missing Documents Warning Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <WarningOutlined style={{ color: '#faad14', fontSize: '18px' }} />
+            <span>Eksik Dokümanlar - Önce Bunları Yüklemeniz Gerekiyor</span>
+          </div>
+        }
+        open={showMissingDocsModal}
+        onCancel={() => setShowMissingDocsModal(false)}
+        footer={[
+          <Button key="close" onClick={() => setShowMissingDocsModal(false)}>
+            Geri Dön
+          </Button>
+        ]}
+        width={800}
+      >
+        <Alert
+          message="Dikkat! Eksik Ongoing Dokümanlar"
+          description={
+            <div>
+              <p>Seçtiğiniz çıkış tarihinden (<strong>{selectedExitDate?.format('DD/MM/YYYY')}</strong>) önce yüklenmesi gereken aşağıdaki <strong>ongoing dokümanlar</strong> eksik:</p>
+              <p style={{ color: '#ff4d4f', fontWeight: 'bold' }}>Bu dokümanları yüklemeden çıkış işlemine devam edemezsiniz!</p>
+            </div>
+          }
+          type="error"
+          showIcon
+          style={{ marginBottom: '16px' }}
+        />
+        
+        <DraggableAntdTable
+          dataSource={missingDocuments}
+          columns={missingDocumentColumns}
+          size="small"
+          bordered={true}
+          pagination={false}
+          rowKey={(record) => record.ID || record.id || record.documentTypeId || Math.random()}
+          localizeThis={localizeThisFunc}
+        />
+        
+        <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#fff2e8', border: '1px solid #ffcc02', borderRadius: '6px' }}>
+          <Text type="warning">
+            <FileOutlined style={{ marginRight: '6px' }} />
+            Bu dokümanları yüklemek için "Yükle" butonlarını kullanın. Tüm eksik dokümanları yükledikten sonra çıkış işlemini başlatabilirsiniz.
+          </Text>
+        </div>
       </Modal>
 
       {/* Document Add Modal */}
@@ -406,6 +600,7 @@ const ScholarExitProcess = ({
           visible={isDocumentAddModalVisible}
           onCancel={handleDocumentModalClose}
           onOk={handleDocumentsAdded}
+          changeRealUploadDate={changeRealUploadDate}
           {...documentModalProps}
         />
       )}

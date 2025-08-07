@@ -52,7 +52,7 @@ namespace API.Services
             return true;
         }
 
-        public async Task<bool> AddScholarFull(ScholarAddDto scholarAddDto)
+        public async Task<int> AddScholarFull(ScholarAddDto scholarAddDto)
         {
             var addedScholar = AddScholar(scholarAddDto.ScholarName,
                                           scholarAddDto.ScholarEmail,
@@ -79,7 +79,7 @@ namespace API.Services
                                                                    scholarAddDto.ExitDocuments,
                                                                    SAVE_CHANGES: false);
             await _context.SaveChangesAsync();
-            return true;
+            return addedScholar.Id;
         }
 
         public async Task<bool> AddTermToScholar(ScholarAddNewTermDto scholarAddNewTermDto)

@@ -131,19 +131,44 @@ const ScholarInfo = () => {
     return false;
   }, [periodData, getScholarIdFromUrl]);
 
+  // Çıkış işlemleri tamamlanmış mı kontrol et
+  const isExitProcessCompleted = useCallback(() => {
+    // Önce API'den gelen kesin çıkış tamamlandı bilgisini kontrol et
+    const apiExitCompleted = periodData?.ExitCompleted === true || 
+                             periodData?.IsExitCompleted === true ||
+                             periodData?.exitCompleted === true ||
+                             periodData?.REAL_END_DATE ||
+                             periodData?.RealEndDate;
+    
+    // Eğer API'den çıkış tamamlandı bilgisi geliyorsa, kesinlikle tamamlandı demektir
+    if (apiExitCompleted) {
+      return true;
+    }
+    
+    // API'den tamamlanma bilgisi gelmemişse, dönem hala aktiftir
+    // Sadece doküman kontrolü yapmayalım çünkü bu yanıltıcı olabilir
+    return false;
+  }, [periodData]);
+
   const isPeriodDeletedOrCompleted = useCallback(() => {
     if (!periodData) return true;
     
+    // Dönem silinmiş mi?
     if (periodData.DELETED === true || periodData.IsDeleted === true) return true;
     
+    // API'den kesin çıkış tamamlandı bilgisi gelmiş mi?
+    if (periodData.ExitCompleted === true || 
+        periodData.IsExitCompleted === true || 
+        periodData.exitCompleted === true) return true;
+    
+    // Gerçek bitiş tarihi geçmiş mi?
     if (periodData.REAL_END_DATE || periodData.RealEndDate) {
       const endDate = new Date(periodData.REAL_END_DATE || periodData.RealEndDate);
       const today = new Date();
       if (endDate < today) return true;
     }
     
-    if (periodData.ExitCompleted === true || periodData.IsExitCompleted === true) return true;
-    
+    // Eğer yukarıdaki koşullar sağlanmıyorsa, dönem hala aktiftir
     return false;
   }, [periodData]);
 
@@ -354,6 +379,35 @@ const ScholarInfo = () => {
     message.success("Dökümanlar başarıyla eklendi!");
   }, [periodData?.id, getScholarIdFromUrl, fetchPeriodDocuments]);
 
+  // changeRealUploadDate fonksiyonu ekleyelim
+  const changeRealUploadDate = useCallback(async (documentId, uploadDate) => {
+    try {
+      // API çağrısı yapılabilir
+      const response = await fetch(`/api/documents/updateUploadDate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentId,
+          uploadDate: uploadDate || new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) throw new Error('Upload date update failed');
+      
+      // Verileri yenile
+      const scholarId = getScholarIdFromUrl();
+      if (periodData?.id) {
+        await fetchPeriodDocuments(scholarId, periodData.id);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Upload date update error:', error);
+      message.error('Doküman tarihi güncellenemedi!');
+      return false;
+    }
+  }, [getScholarIdFromUrl, periodData?.id, fetchPeriodDocuments]);
+
   const handleModalClose = useCallback(() => {
     setIsDocumentAddModalVisible(false);
     setDocumentModalProps(null);
@@ -411,12 +465,8 @@ const ScholarInfo = () => {
   }, []);
 
   const handleExitDocuments = useCallback(() => {
-    if (!isScholarStarted()) {
-      message.warning("Önce giriş işlemlerini tamamlamanız gerekiyor.");
-      return;
-    }
     setIsExitProcessModalVisible(true);
-  }, [isScholarStarted]);
+  }, []);
 
   const handleEntryProcessSuccess = useCallback(async () => {
     const scholarId = getScholarIdFromUrl();
@@ -432,9 +482,24 @@ const ScholarInfo = () => {
     }, 1000);
   }, [getScholarIdFromUrl, refreshData, periodData?.id, fetchPeriodData]);
 
-  const handleExitProcessSuccess = useCallback(() => {
+  const handleExitProcessSuccess = useCallback(async () => {
+    const scholarId = getScholarIdFromUrl();
+    if (scholarId && periodData?.id) {
+      // Data'yı yenile ki çıkış tamamlandı durumu güncellensin
+      await Promise.all([
+        fetchPeriodData(scholarId),
+        fetchPeriodDocuments(scholarId, periodData.id),
+        fetchScholarPeriods(scholarId)
+      ]);
+    }
+    
     message.success("Çıkış işlemleri başarıyla tamamlandı!");
-  }, []);
+    
+    // Bir süre sonra sayfanın üstüne scroll yap ki kullanıcı değişikliği görsün
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 500);
+  }, [getScholarIdFromUrl, periodData?.id, fetchPeriodData, fetchPeriodDocuments, fetchScholarPeriods]);
 
   // Dönem seçimi işlemleri
   const preparePeriodOptions = useCallback(() => {
@@ -623,6 +688,9 @@ const ScholarInfo = () => {
   const PeriodInfoCard = useCallback(() => {
     const entryProgress = getEntryUploadProgress();
     const exitProgress = getExitUploadProgress();
+    
+    // Giriş işlemleri tamamen tamamlandı mı kontrol et
+    const isEntryFullyCompleted = isScholarStarted() && entryProgress.percentage === 100;
 
     return (
       <Card
@@ -690,60 +758,83 @@ const ScholarInfo = () => {
               Dönem İşlemleri
             </div>
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
-              <div>
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<UploadOutlined />}
-                  onClick={handleEntryDocuments}
-                  style={{
-                    background: isScholarStarted() 
-                      ? '#52c41a'
-                      : 'linear-gradient(45deg, #1890ff, #40a9ff)',
-                    border: 'none',
-                    fontSize: '11px',
-                    height: '28px',
-                    width: '100%'
-                  }}
-                >
-                  {isScholarStarted() ? 'Giriş Yapıldı - Dokümanları Görüntüle' : 'Giriş İşlemlerini Başlat'} ({entryProgress.uploaded}/{entryProgress.total})
-                </Button>
-                <Progress
-                  percent={entryProgress.percentage}
-                  size="small"
-                  status={isScholarStarted() ? "success" : entryProgress.percentage === 100 ? "success" : "active"}
-                  style={{ marginTop: '2px' }}
-                />
-              </div>
+              {/* Giriş İşlemleri Butonu - Sadece giriş tamamlanmadığında göster */}
+              {!isEntryFullyCompleted && (
+                <div>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<UploadOutlined />}
+                    onClick={handleEntryDocuments}
+                    style={{
+                      background: isScholarStarted() 
+                        ? '#52c41a'
+                        : 'linear-gradient(45deg, #1890ff, #40a9ff)',
+                      border: 'none',
+                      fontSize: '11px',
+                      height: '28px',
+                      width: '100%'
+                    }}
+                  >
+                    {isScholarStarted() ? 'Giriş Dokümanlarını Tamamla' : 'Giriş İşlemlerini Başlat'} ({entryProgress.uploaded}/{entryProgress.total})
+                  </Button>
+                  <Progress
+                    percent={entryProgress.percentage}
+                    size="small"
+                    status={isScholarStarted() ? "success" : entryProgress.percentage === 100 ? "success" : "active"}
+                    style={{ marginTop: '2px' }}
+                  />
+                </div>
+              )}
 
-              <div>
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<DownloadOutlined />}
-                  onClick={handleExitDocuments}
-                  disabled={!isScholarStarted()}
-                  style={{
-                    background: !isScholarStarted() 
-                      ? '#d9d9d9' 
-                      : 'linear-gradient(45deg, #fa8c16, #ffa940)',
-                    border: 'none',
-                    fontSize: '11px',
-                    height: '28px',
-                    width: '100%'
-                  }}
-                >
-                  Çıkış İşlemlerini Başlat ({exitProgress.uploaded}/{exitProgress.total})
-                </Button>
-                {isScholarStarted() && (
+              {/* Giriş Tamamlandı Mesajı */}
+              {isEntryFullyCompleted && (
+                <div>
+                  <Button
+                    type="default"
+                    size="small"
+                    icon={<UploadOutlined />}
+                    disabled
+                    style={{
+                      background: '#f6ffed',
+                      borderColor: '#b7eb8f',
+                      color: '#52c41a',
+                      fontSize: '11px',
+                      height: '28px',
+                      width: '100%'
+                    }}
+                  >
+                    ✓ Giriş İşlemleri Tamamlandı ({entryProgress.uploaded}/{entryProgress.total})
+                  </Button>
+                </div>
+              )}
+
+              {/* Çıkış İşlemleri Butonu - Sadece giriş tamamlandığında göster */}
+              {isEntryFullyCompleted && (
+                <div>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<DownloadOutlined />}
+                    onClick={handleExitDocuments}
+                    style={{
+                      background: 'linear-gradient(45deg, #fa8c16, #ffa940)',
+                      border: 'none',
+                      fontSize: '11px',
+                      height: '28px',
+                      width: '100%'
+                    }}
+                  >
+                    Çıkış İşlemlerini Başlat ({exitProgress.uploaded}/{exitProgress.total})
+                  </Button>
                   <Progress
                     percent={exitProgress.percentage}
                     size="small"
                     status={exitProgress.percentage === 100 ? "success" : "active"}
                     style={{ marginTop: '2px' }}
                   />
-                )}
-              </div>
+                </div>
+              )}
             </Space>
           </Col>
         </Row>
@@ -760,60 +851,81 @@ const ScholarInfo = () => {
     getExitUploadProgress
   ]);
 
-  const PeriodAlternativeCard = useCallback(() => (
-    <Card
-      title={
-        <span>
-          <CalendarOutlined style={{ marginRight: '8px', color: '#ff4d4f' }} />
-          Dönem Durumu
-        </span>
-      }
-      size="small"
-      style={{ marginBottom: '16px' }}
-    >
-      <div style={{ marginBottom: '20px' }}>
-        <Text
-          type="secondary"
-          style={{ fontSize: '14px', display: 'block', marginBottom: '8px' }}
-        >
-          Bursiyerin aktif dönemi bulunmuyor veya dönem işlemleri tamamlanmış.
-        </Text>
-        <Text type="warning" style={{ fontSize: '12px' }}>
-          Dönem bilgilerini görüntülemek veya yeni dönem eklemek için aşağıdaki seçenekleri kullanabilirsiniz.
-        </Text>
-      </div>
-      <Space size="middle" wrap>
-        <Button
-          type="primary"
-          icon={<InfoCircleOutlined />}
-          onClick={handleShowPeriodInfo}
-          style={{
-            background: 'linear-gradient(45deg, #1890ff, #40a9ff)',
-            border: 'none',
-            height: '36px',
-            paddingLeft: '16px',
-            paddingRight: '16px'
-          }}
-        >
-          Dönem Bilgilerini Göster
-        </Button>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleAddPeriodToScholar}
-          style={{
-            background: 'linear-gradient(45deg, #52c41a, #73d13d)',
-            border: 'none',
-            height: '36px',
-            paddingLeft: '16px',
-            paddingRight: '16px'
-          }}
-        >
-          Bursiyere Dönem Ekle
-        </Button>
-      </Space>
-    </Card>
-  ), [handleShowPeriodInfo, handleAddPeriodToScholar]);
+  const PeriodAlternativeCard = useCallback(() => {
+    // Çıkış işlemleri tamamlandı mı kontrolü
+    const exitCompleted = isExitProcessCompleted();
+    
+    return (
+      <Card
+        title={
+          <span>
+            <CalendarOutlined style={{ marginRight: '8px', color: exitCompleted ? '#52c41a' : '#ff4d4f' }} />
+            {exitCompleted ? 'Dönem Tamamlandı' : 'Dönem Durumu'}
+          </span>
+        }
+        size="small"
+        style={{ marginBottom: '16px' }}
+      >
+        <div style={{ marginBottom: '20px' }}>
+          {exitCompleted ? (
+            <>
+              <Text
+                type="success"
+                style={{ fontSize: '14px', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}
+              >
+                ✓ Bu dönemin çıkış işlemleri başarıyla tamamlanmıştır.
+              </Text>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Dönem işlemleri sona ermiştir. Geçmiş dönem bilgilerini görüntüleyebilir veya yeni dönem ekleyebilirsiniz.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text
+                type="secondary"
+                style={{ fontSize: '14px', display: 'block', marginBottom: '8px' }}
+              >
+                Bursiyerin aktif dönemi bulunmuyor veya dönem işlemleri tamamlanmış.
+              </Text>
+              <Text type="warning" style={{ fontSize: '12px' }}>
+                Dönem bilgilerini görüntülemek veya yeni dönem eklemek için aşağıdaki seçenekleri kullanabilirsiniz.
+              </Text>
+            </>
+          )}
+        </div>
+        <Space size="middle" wrap>
+          <Button
+            type="primary"
+            icon={<InfoCircleOutlined />}
+            onClick={handleShowPeriodInfo}
+            style={{
+              background: 'linear-gradient(45deg, #1890ff, #40a9ff)',
+              border: 'none',
+              height: '36px',
+              paddingLeft: '16px',
+              paddingRight: '16px'
+            }}
+          >
+            Dönem Bilgilerini Göster
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleAddPeriodToScholar}
+            style={{
+              background: 'linear-gradient(45deg, #52c41a, #73d13d)',
+              border: 'none',
+              height: '36px',
+              paddingLeft: '16px',
+              paddingRight: '16px'
+            }}
+          >
+            Bursiyere Dönem Ekle
+          </Button>
+        </Space>
+      </Card>
+    );
+  }, [handleShowPeriodInfo, handleAddPeriodToScholar, isExitProcessCompleted]);
 
   const MainContent = useCallback(() => {
     if (loading) {
@@ -1100,6 +1212,7 @@ const ScholarInfo = () => {
         localizeThis={localizeThis}
         performScholarCheckout={performScholarCheckout}
         refreshData={refreshData}
+        changeRealUploadDate={changeRealUploadDate}
       />
 
       {/* Document Add Modal */}
@@ -1108,6 +1221,7 @@ const ScholarInfo = () => {
           visible={isDocumentAddModalVisible}
           onCancel={handleModalClose}
           onOk={handleDocumentsAdded}
+          changeRealUploadDate={changeRealUploadDate}
           {...documentModalProps}
         />
       )}
