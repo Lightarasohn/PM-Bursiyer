@@ -18,9 +18,15 @@ public partial class PostgresContext : DbContext
 
     public virtual DbSet<Academician> Academicians { get; set; }
 
+    public virtual DbSet<Document> Documents { get; set; }
+
+    public virtual DbSet<DocumentSource> DocumentSources { get; set; }
+
     public virtual DbSet<DocumentType> DocumentTypes { get; set; }
 
     public virtual DbSet<Scholar> Scholars { get; set; }
+
+    public virtual DbSet<ScholarDocument> ScholarDocuments { get; set; }
 
     public virtual DbSet<Sozluk> Sozluks { get; set; }
 
@@ -72,6 +78,70 @@ public partial class PostgresContext : DbContext
                 .HasColumnName("NAME_SURNAME");
         });
 
+        modelBuilder.Entity<Document>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("DOCUMENTS_pkey");
+
+            entity.ToTable("DOCUMENTS");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreDate).HasColumnName("CRE_DATE");
+            entity.Property(e => e.CreUser).HasColumnName("CRE_USER");
+            entity.Property(e => e.DelDate).HasColumnName("DEL_DATE");
+            entity.Property(e => e.DelUser).HasColumnName("DEL_USER");
+            entity.Property(e => e.Deleted).HasColumnName("DELETED");
+            entity.Property(e => e.DocInfo)
+                .HasMaxLength(500)
+                .HasColumnName("doc_info");
+            entity.Property(e => e.DocName)
+                .HasMaxLength(500)
+                .HasColumnName("doc_name");
+            entity.Property(e => e.DocSource).HasColumnName("doc_source");
+            entity.Property(e => e.DocSourceTableId).HasColumnName("doc_source_table_id");
+            entity.Property(e => e.DocTypeId).HasColumnName("doc_type_id");
+            entity.Property(e => e.Extension)
+                .HasMaxLength(5)
+                .HasColumnName("extension");
+            entity.Property(e => e.FullPath)
+                .HasMaxLength(250)
+                .HasColumnName("full_path");
+            entity.Property(e => e.GrantedRoles)
+                .HasMaxLength(100)
+                .HasColumnName("granted_roles");
+            entity.Property(e => e.Path)
+                .HasMaxLength(200)
+                .HasColumnName("path");
+            entity.Property(e => e.Title)
+                .HasMaxLength(50)
+                .HasColumnName("title");
+            entity.Property(e => e.UpdDate).HasColumnName("UPD_DATE");
+            entity.Property(e => e.UpdUser).HasColumnName("UPD_USER");
+
+            entity.HasOne(d => d.DocSourceNavigation).WithMany(p => p.Documents)
+                .HasForeignKey(d => d.DocSource)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("DOCUMENTS_doc_source_fkey");
+        });
+
+        modelBuilder.Entity<DocumentSource>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("DOCUMENT_SOURCES_pkey");
+
+            entity.ToTable("DOCUMENT_SOURCES");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreDate).HasColumnName("CRE_DATE");
+            entity.Property(e => e.CreUser).HasColumnName("CRE_USER");
+            entity.Property(e => e.DelDate).HasColumnName("DEL_DATE");
+            entity.Property(e => e.DelUser).HasColumnName("DEL_USER");
+            entity.Property(e => e.Deleted).HasColumnName("DELETED");
+            entity.Property(e => e.SourceName)
+                .HasMaxLength(100)
+                .HasColumnName("source_name");
+            entity.Property(e => e.UpdDate).HasColumnName("UPD_DATE");
+            entity.Property(e => e.UpdUser).HasColumnName("UPD_USER");
+        });
+
         modelBuilder.Entity<DocumentType>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("DOCUMENT_TYPE_pkey");
@@ -106,6 +176,33 @@ public partial class PostgresContext : DbContext
                 .HasColumnName("NAME_SURNAME");
         });
 
+        modelBuilder.Entity<ScholarDocument>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("SCHOLAR_DOCUMENTS_pkey");
+
+            entity.ToTable("SCHOLAR_DOCUMENTS");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreDate).HasColumnName("CRE_DATE");
+            entity.Property(e => e.CreUser).HasColumnName("CRE_USER");
+            entity.Property(e => e.DelDate).HasColumnName("DEL_DATE");
+            entity.Property(e => e.DelUser).HasColumnName("DEL_USER");
+            entity.Property(e => e.Deleted).HasColumnName("DELETED");
+            entity.Property(e => e.DocumentId).HasColumnName("DOCUMENT_ID");
+            entity.Property(e => e.ScholarId).HasColumnName("scholar_id");
+            entity.Property(e => e.UpdDate).HasColumnName("UPD_DATE");
+            entity.Property(e => e.UpdUser).HasColumnName("UPD_USER");
+
+            entity.HasOne(d => d.Document).WithMany(p => p.ScholarDocuments)
+                .HasForeignKey(d => d.DocumentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("SCHOLAR_DOCUMENTS_DOCUMENT_ID_fkey");
+
+            entity.HasOne(d => d.Scholar).WithMany(p => p.ScholarDocuments)
+                .HasForeignKey(d => d.ScholarId)
+                .HasConstraintName("SCHOLAR_DOCUMENTS_scholar_id_fkey");
+        });
+
         modelBuilder.Entity<Sozluk>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("SOZLUK_pkey");
@@ -113,6 +210,9 @@ public partial class PostgresContext : DbContext
             entity.ToTable("SOZLUK");
 
             entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Deleted)
+                .HasDefaultValue(false)
+                .HasColumnName("DELETED");
             entity.Property(e => e.Dil)
                 .HasMaxLength(50)
                 .HasColumnName("DIL");
@@ -175,6 +275,9 @@ public partial class PostgresContext : DbContext
             entity.Property(e => e.ListType)
                 .HasColumnType("character varying")
                 .HasColumnName("LIST_TYPE");
+            entity.Property(e => e.Deleted)
+                .HasDefaultValue(false)
+                .HasColumnName("DELETED");
 
             entity.HasOne(d => d.DocumentType).WithMany(p => p.TermDocumentTypes)
                 .HasForeignKey(d => d.DocumentTypeId)
@@ -210,21 +313,21 @@ public partial class PostgresContext : DbContext
 
         modelBuilder.Entity<TermsOfScholarsDocument>(entity =>
         {
-            entity.HasKey(e => new { e.ScholarId, e.TermId, e.DocumentTypeId, e.ListType }).HasName("TERMS_OF_SCHOLARS_DOCUMENT_pkey");
+            entity.HasKey(e => e.Id).HasName("TERMS_OF_SCHOLARS_DOCUMENT_pkey");
 
             entity.ToTable("TERMS_OF_SCHOLARS_DOCUMENT");
 
-            entity.Property(e => e.ScholarId).HasColumnName("SCHOLAR_Id");
-            entity.Property(e => e.TermId).HasColumnName("TERM_Id");
-            entity.Property(e => e.DocumentTypeId).HasColumnName("DOCUMENT_TYPE_Id");
-            entity.Property(e => e.ListType)
-                .HasColumnType("character varying")
-                .HasColumnName("LIST_TYPE");
             entity.Property(e => e.Deleted)
                 .HasDefaultValue(false)
                 .HasColumnName("DELETED");
+            entity.Property(e => e.DocumentTypeId).HasColumnName("DOCUMENT_TYPE_Id");
             entity.Property(e => e.ExpectedUploadDate).HasColumnName("EXPECTED_UPLOAD_DATE");
+            entity.Property(e => e.ListType)
+                .HasColumnType("character varying")
+                .HasColumnName("LIST_TYPE");
             entity.Property(e => e.RealUploadDate).HasColumnName("REAL_UPLOAD_DATE");
+            entity.Property(e => e.ScholarId).HasColumnName("SCHOLAR_Id");
+            entity.Property(e => e.TermId).HasColumnName("TERM_Id");
 
             entity.HasOne(d => d.DocumentType).WithMany(p => p.TermsOfScholarsDocuments)
                 .HasForeignKey(d => d.DocumentTypeId)

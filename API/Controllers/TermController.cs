@@ -52,6 +52,55 @@ namespace API.Controllers
                 return BadRequest($"Bir hata oluştu: {ex.Message}");
             }
         }
+        [HttpGet("scholar/{scholarId}")]
+        public async Task<IActionResult> GetTermByScholarId([FromRoute] int scholarId)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var term = await _termRepo.GetTermByScholarId(scholarId);
+                return Ok(term);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Bir hata oluştu: {ex.Message}");
+            }
+        }
+
+        [HttpGet("scholarTerms/{scholarId}")]
+        public async Task<IActionResult> GetAllTermByScholarId([FromRoute] int scholarId)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var term = await _termRepo.GetAllTermsByScholarId(scholarId);
+                return Ok(term);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Bir hata oluştu: {ex.Message}");
+            }
+        }
+        [HttpGet("scholarTermsWithName")]
+public async Task<IActionResult> GetAllTermByScholarId([FromQuery] string termName)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var term = await _termRepo.GetTermsWithName(termName);
+                return Ok(term);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Bir hata oluştu: {ex.Message}");
+            }
+        }
 
         [HttpPost]
         public async Task<IActionResult> AddTerm([FromBody] TermDTO termDto)

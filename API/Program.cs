@@ -7,11 +7,18 @@ using API.Repositories;
 using API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel((context, options) =>
+{
+    options.Configure(context.Configuration.GetSection("Kestrel"));
+});
+
 
 // Add services to the container.
 builder.Services.AddControllers().AddNewtonsoftJson(option =>
@@ -72,7 +79,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme =
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme
 ).
-AddJwtBearer(options => 
+AddJwtBearer(options =>
 options.TokenValidationParameters = new TokenValidationParameters
 {
     ValidateIssuer = true,
@@ -83,7 +90,11 @@ options.TokenValidationParameters = new TokenValidationParameters
     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:SIGNINKEY"]!))
 });
 
+
 builder.Services.AddAuthorization();
+
+//smtpSettings
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 
 // Dependency Injection
 builder.Services.AddScoped<IAcademicianRepository, AcademicianRepository>();
@@ -99,20 +110,68 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IScholarAddService, ScholarAddService>();
 builder.Services.AddScoped<ISozlukRepository, SozlukRepository>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IScholarshipDocumentRepository, ScholarshipDocumentRepository>();
+builder.Services.AddScoped<IScholarshipDocumentDeleteRepository, ScholarshipDocumentDeleteService>();
+
 
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//app.Use(async (context, next) =>
+//{
+    
+//    var originalBodyStream = context.Response.Body;
+//    await using var responseBody = new MemoryStream();
+//    context.Response.Body = responseBody;
+
+//    try
+//    {
+//        await next(); 
+
+//        if (context.Response.StatusCode >= 400 && context.Response.StatusCode < 500)
+//        {
+//            if (context.Response.StatusCode != 404)
+//            {
+//                context.Response.Body.Seek(0, SeekOrigin.Begin);
+//                string responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
+//                context.Response.Body.Seek(0, SeekOrigin.Begin);
+
+//                var emailService = context.RequestServices.GetRequiredService<IEmailService>();
+//                await emailService.SendEmailToAdmin($@"
+//                                                    Status: {context.Response.StatusCode}
+//                                                    Path: {context.Request.Path}
+//                                                    Response Body: {responseText}");
+//            }
+//        }
+//    }
+//    catch (Exception ex)
+//    {
+//        var emailService = context.RequestServices.GetRequiredService<IEmailService>();
+//        await emailService.SendEmailToAdmin($@"
+//                                            500 ERROR:
+//                                            Path: {context.Request.Path}
+//                                            Message: {ex.Message}
+//                                            Stack: {ex.StackTrace}");
+
+//        throw; 
+//    }
+//    finally
+//    {
+//        context.Response.Body.Seek(0, SeekOrigin.Begin);
+//        await responseBody.CopyToAsync(originalBodyStream);
+//        context.Response.Body = originalBodyStream;
+//    }
+//});
+
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(c =>
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "PM Bursiyer API v1")
     );
 
-}
 
 app.UseHttpsRedirection();
 

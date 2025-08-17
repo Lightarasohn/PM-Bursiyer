@@ -56,7 +56,7 @@ namespace API.Repositories
             _logger.LogInformation("DeleteTermDocumentTypeAsync executing");
 
             var entity = await GetTermDocumentTypeByIdAsync(termId, documentTypeId);
-            _context.TermDocumentTypes.Remove(entity);
+            entity.Deleted = true; 
             await _context.SaveChangesAsync();
             return entity;
         }
@@ -66,8 +66,6 @@ namespace API.Repositories
             _logger.LogInformation("GetAllTermDocumentTypesAsync executing");
 
             return await _context.TermDocumentTypes
-                .Include(td => td.Term)
-                .Include(td => td.DocumentType)
                 .ToListAsync();
         }
 

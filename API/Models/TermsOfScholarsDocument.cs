@@ -19,6 +19,8 @@ public partial class TermsOfScholarsDocument
 
     public DateOnly? ExpectedUploadDate { get; set; }
 
+    public int Id { get; set; }
+
     public virtual DocumentType DocumentType { get; set; } = null!;
 
     public virtual Scholar Scholar { get; set; } = null!;

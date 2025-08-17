@@ -80,6 +80,7 @@ namespace API.Repositories
 
             Scholar scholarToUpdate = await GetScholarByIdAsync(id);
             scholarToUpdate.NameSurname = scholarDto.NameSurname;
+            scholarToUpdate.Email = scholarDto.Email;
             await _context.SaveChangesAsync();
             return scholarToUpdate;
         }

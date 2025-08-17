@@ -20,7 +20,7 @@ namespace API.Controllers
             _scholarRepo = scholarRepo;
         }
 
-        [Authorize]
+    
         [HttpGet]
         public async Task<IActionResult> GetAllScholars()
         {

@@ -1,18 +1,21 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import PrivateRoute from './components/PrivateRoute';
+import PrivateRoute from './tools/PrivateRoute';
 
-import LoginScreen from './components/Login/LoginScreen';
-import MainLayout from './components/MainLayout/MainLayout';
-import BursiyerListesi from './components/Bursiyer/BursiyerListesi';
-import BursiyerEkle from './components/Bursiyer/BursiyerEkle';
-import ScholarInfo from './components/Bursiyer/scholarInfo';
+import LoginScreen from './forms/Login/LoginScreen';
+import MainLayout from './forms/MasterPage/MainLayout';
+import BursiyerListesi from './forms/Bursiyer/ScholarList';
+import BursiyerEkle from './forms/Bursiyer/AddScholar';
+import ScholarInfo from './forms/Bursiyer/scholarInfo';
+import ScholarEdit from './forms/Bursiyer/ScholarEdit';
+import Test from './forms/TestPages/Test';
+import AddPeriodToScholar from './forms/Bursiyer/AddPeriodToScholar';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginScreen />} />
-
+        <Route path="/test" element={<Test />} />
         <Route
           path="/"
           element={
@@ -24,6 +27,8 @@ function App() {
           <Route path="bursiyer-listesi" element={<BursiyerListesi />} />
           <Route path="bursiyer-ekle" element={<BursiyerEkle />} />
           <Route path="scholar-info" element={<ScholarInfo />} />
+          <Route path="add-period-to-scholar" element={<AddPeriodToScholar />} />
+          <Route path="update-scholar" element={<ScholarEdit />} />
         </Route>
       </Routes>
     </BrowserRouter>

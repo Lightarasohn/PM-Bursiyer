@@ -52,7 +52,7 @@ namespace API.Services
             return true;
         }
 
-        public async Task<bool> AddScholarFull(ScholarAddDto scholarAddDto)
+        public async Task<int> AddScholarFull(ScholarAddDto scholarAddDto)
         {
             var addedScholar = AddScholar(scholarAddDto.ScholarName,
                                           scholarAddDto.ScholarEmail,
@@ -79,7 +79,65 @@ namespace API.Services
                                                                    scholarAddDto.ExitDocuments,
                                                                    SAVE_CHANGES: false);
             await _context.SaveChangesAsync();
-            return true;
+            return addedScholar.Id;
+        }
+
+        public async Task<bool> AddTermToScholar(ScholarAddNewTermDto scholarAddNewTermDto)
+        {
+            var scholar = await _scholarRepo.GetScholarByIdAsync(scholarAddNewTermDto.ScholarId);
+            if (scholarAddNewTermDto.TermId == 0)
+            {
+                var addedTerm = AddTerm(scholarAddNewTermDto.TermName,
+                                    scholarAddNewTermDto.TermStartDate,
+                                    scholarAddNewTermDto.TermEndDate,
+                                    scholarAddNewTermDto.TermResponsibleAcademician,
+                                    SAVE_CHANGES: true);
+                var termsOfScholar = AddTermsOfScholar(scholarAddNewTermDto.ScholarId,
+                                                       addedTerm.Id,
+                                                       scholarStartDate: null,
+                                                       scholarEndDate: null,
+                                                       SAVE_CHANGES: true);
+                var termDocuments = AddTermDocument(addedTerm.Id,
+                                                    scholarAddNewTermDto.EntryDocuments,
+                                                    scholarAddNewTermDto.OngoingDocuments,
+                                                    scholarAddNewTermDto.ExitDocuments,
+                                                    SAVE_CHANGES: false);
+                var termsOfScholarDocuments = AddTermDocumentToScholar(scholarAddNewTermDto.ScholarId,
+                                                                       addedTerm,
+                                                                       scholarAddNewTermDto.EntryDocuments,
+                                                                       scholarAddNewTermDto.OngoingDocuments,
+                                                                       scholarAddNewTermDto.ExitDocuments,
+                                                                       SAVE_CHANGES: false);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            else
+            {
+                var existingTerm = await _termRepo.GetTermByIdAsync(scholarAddNewTermDto.TermId);
+                var termsOfScholar = await _termsOfScholarRepo.GetTermsOfScholarByIdAsync(scholarAddNewTermDto.ScholarId, existingTerm.Id);
+                if (termsOfScholar != null)
+                {
+                    throw new Exception($"Scholar ID {scholarAddNewTermDto.ScholarId} için zaten bir dönem kaydı bulunmaktadır.");
+                }
+                var addedTermsOfScholar = AddTermsOfScholar(scholarAddNewTermDto.ScholarId,
+                                                            existingTerm.Id,
+                                                            scholarStartDate: null,
+                                                            scholarEndDate: null,
+                                                            SAVE_CHANGES: true);
+                var termDocuments = AddTermDocument(existingTerm.Id,
+                                                    scholarAddNewTermDto.EntryDocuments,
+                                                    scholarAddNewTermDto.OngoingDocuments,
+                                                    scholarAddNewTermDto.ExitDocuments,
+                                                    SAVE_CHANGES: false);
+                var termsOfScholarDocuments = AddTermDocumentToScholar(scholarAddNewTermDto.ScholarId,
+                                                                       existingTerm,
+                                                                       scholarAddNewTermDto.EntryDocuments,
+                                                                       scholarAddNewTermDto.OngoingDocuments,
+                                                                       scholarAddNewTermDto.ExitDocuments,
+                                                                       SAVE_CHANGES: false);
+                await _context.SaveChangesAsync();
+                return true;
+            }
         }
 
         private Scholar AddScholar(string scholarName, string scholarEmail, bool SAVE_CHANGES = true)
@@ -342,6 +400,5 @@ namespace API.Services
 
             return new();
         }
-
     }
 }

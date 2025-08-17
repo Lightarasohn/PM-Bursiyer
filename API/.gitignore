@@ -3,3 +3,6 @@ appsettings*.json
 /Properties
 /obj
 /bin
+/.vs
+API.csproj.user
+/UploadedDocuments

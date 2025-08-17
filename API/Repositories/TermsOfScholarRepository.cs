@@ -26,10 +26,10 @@ namespace API.Repositories
             _logger.LogInformation("AddTermsOfScholar executing");
 
             var scholarExists = _context.Scholars.Any(s => s.Id == termsOfScholarDto.ScholarId && !s.Deleted);
-            if(!scholarExists) throw new Exception($"Scholar with id={termsOfScholarDto.ScholarId} not found");
+            if (!scholarExists) throw new Exception($"Scholar with id={termsOfScholarDto.ScholarId} not found");
 
             var termExists = _context.Terms.Any(t => t.Id == termsOfScholarDto.TermId && !t.Deleted);
-            if(!termExists) throw new Exception($"Term with id={termsOfScholarDto.TermId} not found");
+            if (!termExists) throw new Exception($"Term with id={termsOfScholarDto.TermId} not found");
 
             var existing = _context.TermsOfScholars
                 .FirstOrDefault(ts => ts.ScholarId == termsOfScholarDto.ScholarId && ts.TermId == termsOfScholarDto.TermId && !ts.Deleted);
@@ -58,10 +58,10 @@ namespace API.Repositories
             _logger.LogInformation("AddTermsOfScholarAsync executing");
 
             var scholarExists = await _context.Scholars.AnyAsync(s => s.Id == termsOfScholarDto.ScholarId && !s.Deleted);
-            if(!scholarExists) throw new Exception($"Scholar with id={termsOfScholarDto.ScholarId} not found");
+            if (!scholarExists) throw new Exception($"Scholar with id={termsOfScholarDto.ScholarId} not found");
 
             var termExists = await _context.Terms.AnyAsync(t => t.Id == termsOfScholarDto.TermId && !t.Deleted);
-            if(!termExists) throw new Exception($"Term with id={termsOfScholarDto.TermId} not found");
+            if (!termExists) throw new Exception($"Term with id={termsOfScholarDto.TermId} not found");
 
             var existing = await _context.TermsOfScholars
                 .FirstOrDefaultAsync(ts => ts.ScholarId == termsOfScholarDto.ScholarId && ts.TermId == termsOfScholarDto.TermId && !ts.Deleted);
@@ -156,6 +156,50 @@ namespace API.Repositories
 
             await _context.SaveChangesAsync();
             return termsOfScholarToUpdate;
+        }
+        public async Task<TermsOfScholar> CheckInScholarAsync(int scholarId, int termId)
+        {
+            _logger.LogInformation("CheckInScholarAsync executing");
+
+            var termsOfScholar = await _context.TermsOfScholars
+                .FirstOrDefaultAsync(ts => ts.ScholarId == scholarId && ts.TermId == termId && !ts.Deleted);
+
+            if (termsOfScholar == null)
+                throw new Exception($"Kayıt bulunamadı. ScholarId={scholarId}, TermId={termId}");
+
+            if (termsOfScholar.StartDate.HasValue)
+                throw new Exception("Giriş işlemi daha önce yapılmış.");
+
+            termsOfScholar.StartDate = DateOnly.FromDateTime(DateTime.Now);
+
+            await _context.SaveChangesAsync();
+            return termsOfScholar;
+        }
+
+        public async Task<TermsOfScholar> CheckOutScholarAsync(int scholarId, int termId, DateTime endDate)
+        {
+            _logger.LogInformation("CheckOutScholarAsync executing");
+
+            var termsOfScholar = await _context.TermsOfScholars
+                .FirstOrDefaultAsync(ts => ts.ScholarId == scholarId && ts.TermId == termId && !ts.Deleted);
+
+            if (termsOfScholar == null)
+                throw new Exception($"Kayıt bulunamadı. ScholarId={scholarId}, TermId={termId}");
+
+            if (!termsOfScholar.StartDate.HasValue)
+                throw new Exception("Önce giriş yapılmalıdır.");
+
+            if (termsOfScholar.EndDate.HasValue)
+                throw new Exception("Çıkış işlemi daha önce yapılmış.");
+
+            var endDateOnly = DateOnly.FromDateTime(endDate);
+            if (termsOfScholar.StartDate.Value > endDateOnly)
+                throw new Exception("Çıkış tarihi giriş tarihinden önce olamaz.");
+
+            termsOfScholar.EndDate = endDateOnly;
+
+            await _context.SaveChangesAsync();
+            return termsOfScholar;
         }
     }
 }

@@ -208,6 +208,33 @@ namespace API.Repositories
             return entity;
         }
 
+        public async Task<TermsOfScholarsDocument> ChangeRealUploadDateAsync(int scholarId, int termId, int documentTypeId, string listType, bool isRealUploadDate)
+        {
+            var termsOfScholarsDocument = await _context.TermsOfScholarsDocuments
+                .FirstOrDefaultAsync(tsd => tsd.ScholarId == scholarId && tsd.TermId == termId && tsd.DocumentTypeId == documentTypeId && tsd.ListType == listType && !tsd.Deleted);
+
+            if (termsOfScholarsDocument == null)
+            {
+                throw new Exception($"TermsOfScholarsDocument not found for ScholarId={scholarId}, TermId={termId}, DocumentTypeId={documentTypeId}, ListType={listType}");
+            }
+
+            termsOfScholarsDocument.RealUploadDate = isRealUploadDate ? DateOnly.FromDateTime(DateTime.UtcNow) : null;
+            await _context.SaveChangesAsync();
+
+            return termsOfScholarsDocument;
+        }
+
+        public async Task<TermsOfScholarsDocument> ChangeRealUploadDateAsync(int id, bool isRealUploadDate)
+        {
+            _logger.LogInformation("ChangeRealUploadDateAsync executing for ID: {Id}", id);
+            var termsOfScholarsDocument = await _context.TermsOfScholarsDocuments
+                .FirstOrDefaultAsync(tsd => tsd.Id == id && !tsd.Deleted) ?? throw new Exception($"TermsOfScholarsDocument with ID={id} not found");
+
+            termsOfScholarsDocument.RealUploadDate = isRealUploadDate ? DateOnly.FromDateTime(DateTime.UtcNow) : null;
+            await _context.SaveChangesAsync();
+
+            return termsOfScholarsDocument;
+        }
 
         public async Task<TermsOfScholarsDocument> DeleteTermsOfScholarsDocumentAsync(int scholarId, int termId, int documentTypeId)
         {
@@ -251,10 +278,8 @@ namespace API.Repositories
             _logger.LogInformation("GetTermsOfScholarsDocumentsByScholarAndTermIdAsync executing");
 
             IEnumerable<TermsOfScholarsDocument> termsOfScholarsDocuments = await _context.TermsOfScholarsDocuments
-                .Include(ts => ts.DocumentType)
-                .Include(ts => ts.Scholar)
-                .Include(ts => ts.Term)
                 .Where(ts => ts.ScholarId == scholarId && ts.TermId == termId && !ts.Deleted)
+                .Include(ts => ts.DocumentType)
                 .ToListAsync();
 
             return termsOfScholarsDocuments;

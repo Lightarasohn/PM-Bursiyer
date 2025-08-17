@@ -13,6 +13,8 @@ public partial class Scholar
 
     public string? Email { get; set; }
 
+    public virtual ICollection<ScholarDocument> ScholarDocuments { get; set; } = new List<ScholarDocument>();
+
     public virtual ICollection<TermsOfScholar> TermsOfScholars { get; set; } = new List<TermsOfScholar>();
 
     public virtual ICollection<TermsOfScholarsDocument> TermsOfScholarsDocuments { get; set; } = new List<TermsOfScholarsDocument>();
